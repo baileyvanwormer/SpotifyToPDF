@@ -7,4 +7,5 @@ Link to Spotify Dev site: https://developer.spotify.com/dashboard
 
 *Key commands*:
     To start Flask: cd into backend -> python3 app.py
+    
     To start ngrok (after Flask): New terminal: ngrok http 127.0.0.1:5000
