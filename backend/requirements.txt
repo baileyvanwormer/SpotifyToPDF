@@ -1,0 +1,5 @@
+Flask
+spotipy
+fpdf
+flask-cors
+python-dotenv
