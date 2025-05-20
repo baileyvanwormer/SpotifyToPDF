@@ -6,7 +6,9 @@ Turn Spotify playlists into PDF's to store in case Spotify servers ever remove s
 Link to Spotify Dev site: https://developer.spotify.com/dashboard
 
 *Key commands*:
-    To start Flask: cd into backend -> 
+    To start Flask: 
+    
+    cd into backend -> 
     
     python3 app.py
 
