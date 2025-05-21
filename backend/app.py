@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from fpdf import FPDF
 import spotipy
+from datetime import datetime
 
 load_dotenv()
 
@@ -80,6 +81,11 @@ def export():
         playlist_data[playlist['name']] = tracks
 
     # === Liked Songs Section ===
+    now = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+    pdf.set_font("NotoSans", "I", 10)
+    pdf.cell(0, 10, f"Exported on {now}", ln=True)
+    pdf.ln(5)
+    
     pdf.set_font("NotoSans", "B", 16)
     pdf.cell(0, 10, "🎵 Liked Songs", ln=True)
     pdf.ln(5)
