@@ -15,7 +15,7 @@ CORS(app)
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIPY_CLIENT_ID"),
     client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-    redirect_uri="https://061c-195-202-50-83.ngrok-free.app",
+    redirect_uri="https://spotifytopdf.ngrok.app",
     scope="user-library-read playlist-read-private"
 )
 
@@ -32,19 +32,29 @@ def login():
 def export():
     data = request.get_json()
     token = data.get("token")
+    print(token)
     if not token:
         return jsonify({"error": "Missing token"}), 400
 
     sp = spotipy.Spotify(auth=token)
 
-    # Fetch liked songs
+    # Fetch liked songs (limit to first 100)
     liked_tracks = []
-    results = sp.current_user_saved_tracks()
-    while results:
+    MAX_TRACKS = 50
+    track_count = 0
+
+    results = sp.current_user_saved_tracks(limit=50)
+    while results and track_count < MAX_TRACKS:
         for item in results['items']:
             track = item['track']
             liked_tracks.append(f"{track['name']} - {track['artists'][0]['name']}")
-        results = sp.next(results) if results['next'] else None
+            track_count += 1
+            if track_count >= MAX_TRACKS:
+                break
+        if track_count < MAX_TRACKS and results['next']:
+            results = sp.next(results)
+        else:
+            break
 
     # Fetch playlists
     playlists = sp.current_user_playlists()
@@ -61,9 +71,14 @@ def export():
     # Generate PDF
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
 
-    pdf.cell(200, 10, txt="Liked Songs", ln=True)
+    pdf.add_font("NotoSans", "", "fonts/NotoSans-Medium.ttf", uni=True)
+    pdf.add_font("NotoSans", "B", "fonts/NotoSans-Bold.ttf", uni=True)
+    pdf.add_font("NotoSans", "I", "fonts/NotoSans-Italic.ttf", uni=True)
+
+    pdf.set_font("NotoSans", "", 12)   # Regular
+
+    pdf.cell(200, 10, txt="Liked Songs (First 50)", ln=True)
     for song in liked_tracks:
         pdf.cell(200, 10, txt=song, ln=True)
 
@@ -79,4 +94,5 @@ def export():
     return send_file(pdf_path, as_attachment=True)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True)
+
