@@ -7,7 +7,7 @@ Built using a React.JS frontend and a Python Flask backend.
 
 Link to Spotify Dev site: https://developer.spotify.com/dashboard
 
-*Key commands*:
+*Key commands to start application for dev testing*:
     To start Flask: 
     
     cd into backend -> 
@@ -17,3 +17,9 @@ Link to Spotify Dev site: https://developer.spotify.com/dashboard
     To start ngrok (after Flask): New terminal -> 
     
     ngrok http --url=spotifytopdf.ngrok.app 127.0.0.1:5000
+
+    To start frontend:
+
+    cd into frontend ->
+
+    npm run dev
