@@ -3,7 +3,7 @@ Turn Spotify playlists into PDF's to store in case Spotify servers ever remove s
 
 Built using a React.JS frontend and a Python Flask backend.
 
-**NGROK is running on a custom domain https://spotifytopdf.ngrok.app**
+**ngrok is running on a custom domain https://spotifytopdf.ngrok.app**
 
 Link to Spotify Dev site: https://developer.spotify.com/dashboard
 
