@@ -8,11 +8,15 @@ function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get("access_token");
+    const tokenFromURL = params.get("access_token");
+    const tokenFromStorage = localStorage.getItem("access_token");
 
-    if (token) {
-      setAccessToken(token);
+    if (tokenFromURL) {
+      localStorage.setItem("access_token", tokenFromURL);
+      setAccessToken(tokenFromURL);
       window.history.replaceState({}, document.title, "/"); // Clean URL
+    } else if (tokenFromStorage) {
+      setAccessToken(tokenFromStorage);
     }
   }, []);
 
@@ -21,11 +25,14 @@ function App() {
     try {
       const res = await fetch("https://spotifytopdf.ngrok.app/export", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ token: accessToken }),
+        body: JSON.stringify({
+          include_liked: true,
+          playlist_ids: [], // optionally update this later
+        }),
       });
 
       if (!res.ok) throw new Error("Export failed");

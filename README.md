@@ -26,4 +26,4 @@ Link to Spotify Dev site: https://developer.spotify.com/dashboard
 
 Using Postman for backend testing.
 
-User Spotify access token is kept in API header rather than URL query for security, see Postman.
+User Spotify access token is kept in API header rather than URL query for security, see Postman. Want to reflect this in front end code for MVP.

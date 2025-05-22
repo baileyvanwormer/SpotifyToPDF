@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from fpdf import FPDF
 import spotipy
 from datetime import datetime
+from urllib.parse import urlencode
 
 load_dotenv()
 
@@ -27,12 +28,14 @@ def home():
     if code:
         token_info = sp_oauth.get_access_token(code)
         access_token = token_info["access_token"]
-        print("🔑 Access Token:", access_token)
-        final = "Flask is working! " + access_token
-        return final
+
+        # Redirect to frontend with token in query string
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        redirect_url = f"{frontend_url}/dashboard?" + urlencode({"access_token": access_token})
+        return redirect(redirect_url)
 
     auth_url = sp_oauth.get_authorize_url()
-    return "Flask is working!"
+    return redirect(auth_url)
 
 # GET: authenticate Spotify user using Spotify API
 @app.route("/login")
