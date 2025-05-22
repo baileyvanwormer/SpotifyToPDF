@@ -20,21 +20,74 @@ sp_oauth = SpotifyOAuth(
     scope="user-library-read playlist-read-private"
 )
 
+# initial home page
 @app.route("/")
 def home():
-    return "Flask is working ✅"
+    code = request.args.get("code")
+    if code:
+        token_info = sp_oauth.get_access_token(code)
+        access_token = token_info["access_token"]
+        print("🔑 Access Token:", access_token)
+        final = "Flask is working! " + access_token
+        return final
 
+    auth_url = sp_oauth.get_authorize_url()
+    return "Flask is working!"
+
+# GET: authenticate Spotify user using Spotify API
 @app.route("/login")
 def login():
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
-@app.route("/export", methods=["POST"])
-def export():
-    data = request.get_json()
-    token = data.get("token")
+# GET: fetch Liked songs and Playlists for a user using Spotify API
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.replace("Bearer ", "")
+
+
     if not token:
         return jsonify({"error": "Missing token"}), 400
+
+    sp = spotipy.Spotify(auth=token)
+
+    try:
+        # Get liked songs
+        liked = sp.current_user_saved_tracks(limit=50)
+        liked_songs = [{
+            "name": t['track']['name'],
+            "artist": t['track']['artists'][0]['name'],
+            "id": t['track']['id']
+        } for t in liked['items']]
+
+        # Get playlists
+        playlists = sp.current_user_playlists()
+        playlist_list = [{
+            "name": p['name'],
+            "id": p['id'],
+            "track_count": p['tracks']['total']
+        } for p in playlists['items']]
+
+        return jsonify({
+            "liked_songs": liked_songs,
+            "playlists": playlist_list
+        })
+
+    except spotipy.SpotifyException as e:
+        return jsonify({"error": str(e)}), 401
+
+# POST: send user Spotify access token to fetch Liked Songs and Playlist data from Spotify API
+@app.route("/export", methods=["POST"])
+def export():
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.replace("Bearer ", "")
 
     sp = spotipy.Spotify(auth=token)
 
@@ -85,7 +138,7 @@ def export():
     pdf.set_font("NotoSans", "I", 10)
     pdf.cell(0, 10, f"Exported on {now}", ln=True)
     pdf.ln(5)
-    
+
     pdf.set_font("NotoSans", "B", 16)
     pdf.cell(0, 10, "🎵 Liked Songs", ln=True)
     pdf.ln(5)

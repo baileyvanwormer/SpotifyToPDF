@@ -19,9 +19,12 @@ function App() {
   const handleExport = async () => {
     setStatus("exporting");
     try {
-      const res = await fetch("http://localhost:5000/export", {
+      const res = await fetch("https://spotifytopdf.ngrok.app/export", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
         body: JSON.stringify({ token: accessToken }),
       });
 

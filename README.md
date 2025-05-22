@@ -23,3 +23,7 @@ Link to Spotify Dev site: https://developer.spotify.com/dashboard
     cd into frontend ->
 
     npm run dev
+
+Using Postman for backend testing.
+
+User Spotify access token is kept in API header rather than URL query for security, see Postman.
