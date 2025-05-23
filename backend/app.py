@@ -7,6 +7,8 @@ from fpdf import FPDF
 import spotipy
 from datetime import datetime
 from urllib.parse import urlencode
+import pandas as pd
+import openpyxl
 
 load_dotenv()
 
@@ -28,11 +30,13 @@ def home():
     if code:
         token_info = sp_oauth.get_access_token(code)
         access_token = token_info["access_token"]
+        print(access_token)
+        return access_token # comment out and uncomment below code when using with frontend, this is for backend testing only
 
         # Redirect to frontend with token in query string
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-        redirect_url = f"{frontend_url}/dashboard?" + urlencode({"access_token": access_token})
-        return redirect(redirect_url)
+        #frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        #redirect_url = f"{frontend_url}/dashboard?" + urlencode({"access_token": access_token})
+        #return redirect(redirect_url)
 
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
@@ -168,6 +172,84 @@ def export():
     pdf.output(pdf_path)
 
     return send_file(pdf_path, as_attachment=True)
+
+@app.route("/exportxlsx", methods=["POST"])
+def export_xlsx():
+    # Get access token from Authorization header
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.replace("Bearer ", "")
+    sp = spotipy.Spotify(auth=token)
+
+    # Parse request JSON
+    data = request.get_json()
+    include_liked = data.get("include_liked", True)
+    playlist_ids = data.get("playlist_ids", [])
+
+    rows = []
+
+    try:
+        # Liked Songs
+        if include_liked:
+            liked_tracks = sp.current_user_saved_tracks(limit=50)
+            for item in liked_tracks['items']:
+                track = item['track']
+                rows.append({
+                    "Source": "Liked Songs",
+                    "Track": track['name'],
+                    "Artist": track['artists'][0]['name'],
+                    "Album": track['album']['name'],
+                    "Duration (min)": round(track['duration_ms'] / 60000, 2)
+                })
+
+        # Selected Playlists
+        for pid in playlist_ids:
+            playlist = sp.playlist(pid)
+            playlist_name = playlist['name']
+            tracks_data = sp.playlist_tracks(pid)
+
+            for item in tracks_data['items']:
+                track = item['track']
+                if track:
+                    rows.append({
+                        "Source": playlist_name,
+                        "Track": track['name'],
+                        "Artist": track['artists'][0]['name'],
+                        "Album": track['album']['name'],
+                        "Duration (min)": round(track['duration_ms'] / 60000, 2)
+                    })
+
+        # Convert to DataFrame and save as Excel
+        df = pd.DataFrame(rows)[["Source", "Artist", "Track", "Album", "Duration (min)"]]
+        xlsx_path = os.path.join(os.path.dirname(__file__), "spotify_export.xlsx")
+        df.to_excel(xlsx_path, index=False)
+
+        # Open the Excel file for editing
+        wb = openpyxl.load_workbook(xlsx_path)
+        ws = wb.active
+
+        # Set custom column widths (A = Source, B = Artist, etc.)
+        column_widths = {
+            "A": 20,
+            "B": 25,
+            "C": 35,
+            "D": 30,
+            "E": 15,
+        }
+
+        for col_letter, width in column_widths.items():
+            ws.column_dimensions[col_letter].width = width
+
+        # Save changes
+        wb.save(xlsx_path)
+
+        return send_file(xlsx_path, as_attachment=True)
+
+    except Exception as e:
+        print("Export error:", e)
+        return jsonify({"error": "Export to Excel failed"}), 500
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
