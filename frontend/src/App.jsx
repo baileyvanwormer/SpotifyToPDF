@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import LoginButton from "./components/LoginButton";
-import ExportButton from "./components/ExportButton";
+import ExportPDFButton from "./components/ExportPDFButton";
+import ExportExcelButton from "./components/ExportExcelButton";
 
 function App() {
   const [accessToken, setAccessToken] = useState(null);
-  const [status, setStatus] = useState("idle"); // idle | exporting | done | error
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -20,37 +20,6 @@ function App() {
     }
   }, []);
 
-  const handleExport = async () => {
-    setStatus("exporting");
-    try {
-      const res = await fetch("https://spotifytopdf.ngrok.app/export", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          include_liked: true,
-          playlist_ids: [], // optionally update this later
-        }),
-      });
-
-      if (!res.ok) throw new Error("Export failed");
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "spotify_export.pdf";
-      a.click();
-
-      setStatus("done");
-    } catch (err) {
-      console.error(err);
-      setStatus("error");
-    }
-  };
-
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <h1>Spotify to PDF Exporter</h1>
@@ -62,11 +31,11 @@ function App() {
         </>
       ) : (
         <>
-          <p>You’re logged in. Click below to create your personalized PDF export.</p>
-          <ExportButton onExport={handleExport} />
-          {status === "exporting" && <p>Generating PDF...</p>}
-          {status === "done" && <p>✅ PDF downloaded!</p>}
-          {status === "error" && <p>❌ Something went wrong. Try again.</p>}
+          <p>You’re logged in. Click below to create your personalized export.</p>
+          <div style={{ display: "flex", gap: "1rem" }}>
+            <ExportPDFButton token={accessToken} includeLiked={true} playlistIds={[]} />
+            <ExportExcelButton token={accessToken} includeLiked={true} playlistIds={[]} />
+          </div>
         </>
       )}
     </div>

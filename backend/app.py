@@ -31,12 +31,12 @@ def home():
         token_info = sp_oauth.get_access_token(code)
         access_token = token_info["access_token"]
         print(access_token)
-        return access_token # comment out and uncomment below code when using with frontend, this is for backend testing only
+        # return access_token # comment out and uncomment below code when using with frontend, this is for backend testing only
 
         # Redirect to frontend with token in query string
-        #frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-        #redirect_url = f"{frontend_url}/dashboard?" + urlencode({"access_token": access_token})
-        #return redirect(redirect_url)
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        redirect_url = f"{frontend_url}/dashboard?" + urlencode({"access_token": access_token})
+        return redirect(redirect_url)
 
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
@@ -90,15 +90,22 @@ def dashboard():
 # POST: send user Spotify access token to fetch Liked Songs and Playlist data from Spotify API
 @app.route("/export", methods=["POST"])
 def export():
+    print("🟢 /export called")
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return jsonify({"error": "Missing or invalid token"}), 401
 
     token = auth_header.replace("Bearer ", "")
-
     sp = spotipy.Spotify(auth=token)
 
-    # === Load Fonts ===
+    data = request.get_json()
+    include_liked = data.get("include_liked", True)
+    playlist_ids = data.get("playlist_ids", [])
+
+    print("INCLUDE LIKED:", include_liked)
+    print("PLAYLIST IDS:", playlist_ids)    
+
+    # === Set up PDF ===
     font_dir = os.path.join(os.path.dirname(__file__), "fonts")
     pdf = FPDF()
     pdf.add_page()
@@ -106,60 +113,57 @@ def export():
     pdf.add_font("NotoSans", "B", os.path.join(font_dir, "NotoSans-Bold.ttf"), uni=True)
     pdf.add_font("NotoSans", "I", os.path.join(font_dir, "NotoSans-Italic.ttf"), uni=True)
 
-    # === Liked Songs (limit to 50) ===
-    liked_tracks = []
-    MAX_TRACKS = 50
-    track_count = 0
+    # === Liked Songs Section ===
+    if include_liked:
+        liked_tracks = []
+        MAX_TRACKS = 50
+        track_count = 0
 
-    results = sp.current_user_saved_tracks(limit=50)
-    while results and track_count < MAX_TRACKS:
-        for item in results['items']:
-            track = item['track']
-            artist = track['artists'][0]['name']
-            song = track['name']
-            liked_tracks.append((artist, song))
-            track_count += 1
-            if track_count >= MAX_TRACKS:
+        results = sp.current_user_saved_tracks(limit=50)
+        while results and track_count < MAX_TRACKS:
+            for item in results['items']:
+                track = item['track']
+                artist = track['artists'][0]['name']
+                song = track['name']
+                liked_tracks.append((artist, song))
+                track_count += 1
+                if track_count >= MAX_TRACKS:
+                    break
+            if track_count < MAX_TRACKS and results['next']:
+                results = sp.next(results)
+            else:
                 break
-        if track_count < MAX_TRACKS and results['next']:
-            results = sp.next(results)
-        else:
-            break
 
-    # === Playlists (limit to first 3) ===
-    playlists = sp.current_user_playlists()
-    playlist_data = {}
-    for playlist in playlists['items'][:3]:
+        now = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        pdf.set_font("NotoSans", "I", 10)
+        pdf.cell(0, 10, f"Exported on {now}", ln=True)
+        pdf.ln(5)
+
+        pdf.set_font("NotoSans", "B", 16)
+        pdf.cell(0, 10, "🎵 Liked Songs", ln=True)
+        pdf.ln(5)
+
+        for i, (artist, song) in enumerate(liked_tracks):
+            pdf.set_font("NotoSans", "", 12)
+            pdf.multi_cell(0, 10, f"{i+1}. {artist} – {song}")
+            pdf.ln(1)
+
+    # === Selected Playlists ===
+    for pid in playlist_ids:
+        playlist = sp.playlist(pid)
+        tracks_data = sp.playlist_tracks(pid)
         tracks = []
-        tracks_data = sp.playlist_tracks(playlist['id'])
+
         for item in tracks_data['items']:
             track = item['track']
             if track:
                 artist = track['artists'][0]['name']
                 song = track['name']
                 tracks.append((artist, song))
-        playlist_data[playlist['name']] = tracks
 
-    # === Liked Songs Section ===
-    now = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-    pdf.set_font("NotoSans", "I", 10)
-    pdf.cell(0, 10, f"Exported on {now}", ln=True)
-    pdf.ln(5)
-
-    pdf.set_font("NotoSans", "B", 16)
-    pdf.cell(0, 10, "🎵 Liked Songs", ln=True)
-    pdf.ln(5)
-
-    for i, (artist, song) in enumerate(liked_tracks):
-        pdf.set_font("NotoSans", "", 12)
-        pdf.multi_cell(0, 10, f"{i+1}. {artist} – {song}")
-        pdf.ln(1)
-
-    # === Playlist Sections ===
-    for playlist, tracks in playlist_data.items():
         pdf.add_page()
         pdf.set_font("NotoSans", "B", 16)
-        pdf.cell(0, 10, f"📂 Playlist: {playlist}", ln=True)
+        pdf.cell(0, 10, f"📂 Playlist: {playlist['name']}", ln=True)
         pdf.ln(5)
 
         for i, (artist, song) in enumerate(tracks):
@@ -167,7 +171,7 @@ def export():
             pdf.multi_cell(0, 10, f"{i+1}. {artist} – {song}")
             pdf.ln(1)
 
-    # === Write PDF to file ===
+    # === Write and Return PDF ===
     pdf_path = os.path.join(os.path.dirname(__file__), "spotify_export.pdf")
     pdf.output(pdf_path)
 
@@ -175,6 +179,7 @@ def export():
 
 @app.route("/exportxlsx", methods=["POST"])
 def export_xlsx():
+    print("🟢 /exportxlsx called")
     # Get access token from Authorization header
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
