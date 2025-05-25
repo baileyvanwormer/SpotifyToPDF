@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, redirect, send_file
+from flask import Flask, jsonify, request, redirect, send_file, send_from_directory, make_response
 from flask_cors import CORS
 from spotipy.oauth2 import SpotifyOAuth
 import os
@@ -9,56 +9,38 @@ from datetime import datetime
 from urllib.parse import urlencode
 import pandas as pd
 import openpyxl
+from spotipy.oauth2 import SpotifyOAuth
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="../frontend/dist")
 CORS(app)
+
+print("🚀 Flask app is running from:", __file__)
+
 
 # 🔥 THIS is the missing part:
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIPY_CLIENT_ID"),
     client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-    redirect_uri="https://spotifytopdf.ngrok.app",
+    redirect_uri="https://spotifytopdf.ngrok.app/callback",
     scope="user-library-read playlist-read-private"
 )
-
-# initial home page
-@app.route("/")
-def home():
-    code = request.args.get("code")
-    if code:
-        token_info = sp_oauth.get_access_token(code)
-        access_token = token_info["access_token"]
-        print(access_token)
-        # return access_token # comment out and uncomment below code when using with frontend, this is for backend testing only
-
-        # Redirect to frontend with token in query string
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-        redirect_url = f"{frontend_url}/dashboard?" + urlencode({"access_token": access_token})
-        return redirect(redirect_url)
-
-    auth_url = sp_oauth.get_authorize_url()
-    return redirect(auth_url)
 
 # GET: authenticate Spotify user using Spotify API
 @app.route("/login")
 def login():
     auth_url = sp_oauth.get_authorize_url()
+    print(f"Redirecting to: {auth_url}")
     return redirect(auth_url)
 
 # GET: fetch Liked songs and Playlists for a user using Spotify API
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Missing or invalid token"}), 401
-
-    token = auth_header.replace("Bearer ", "")
-
-
+    # Get token from secure cookie instead of header
+    token = request.cookies.get("spotify_token")
     if not token:
-        return jsonify({"error": "Missing token"}), 400
+        return jsonify({"error": "Missing or invalid token"}), 401
 
     sp = spotipy.Spotify(auth=token)
 
@@ -87,23 +69,28 @@ def dashboard():
     except spotipy.SpotifyException as e:
         return jsonify({"error": str(e)}), 401
 
+
 # POST: send user Spotify access token to fetch Liked Songs and Playlist data from Spotify API
 @app.route("/export", methods=["POST"])
 def export():
     print("🟢 /export called")
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
+
+    # ✅ Get token from cookie, not Authorization header
+    token = request.cookies.get("spotify_token")
+    if not token:
+        print("❌ Missing token in cookies for /export")
         return jsonify({"error": "Missing or invalid token"}), 401
 
-    token = auth_header.replace("Bearer ", "")
     sp = spotipy.Spotify(auth=token)
 
     data = request.get_json()
     include_liked = data.get("include_liked", True)
     playlist_ids = data.get("playlist_ids", [])
+    liked_limit = data.get("liked_limit", 50)
 
     print("INCLUDE LIKED:", include_liked)
-    print("PLAYLIST IDS:", playlist_ids)    
+    print("PLAYLIST IDS:", playlist_ids)
+    print("LIKED LIMIT:", liked_limit)
 
     # === Set up PDF ===
     font_dir = os.path.join(os.path.dirname(__file__), "fonts")
@@ -119,7 +106,7 @@ def export():
         MAX_TRACKS = 50
         track_count = 0
 
-        results = sp.current_user_saved_tracks(limit=50)
+        results = sp.current_user_saved_tracks(limit=liked_limit)
         while results and track_count < MAX_TRACKS:
             for item in results['items']:
                 track = item['track']
@@ -180,25 +167,27 @@ def export():
 @app.route("/exportxlsx", methods=["POST"])
 def export_xlsx():
     print("🟢 /exportxlsx called")
-    # Get access token from Authorization header
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
+
+    # ✅ Get token from cookie
+    token = request.cookies.get("spotify_token")
+    if not token:
+        print("❌ Missing token in cookies for /exportxlsx")
         return jsonify({"error": "Missing or invalid token"}), 401
 
-    token = auth_header.replace("Bearer ", "")
     sp = spotipy.Spotify(auth=token)
 
     # Parse request JSON
     data = request.get_json()
     include_liked = data.get("include_liked", True)
     playlist_ids = data.get("playlist_ids", [])
+    liked_limit = data.get("liked_limit", 50)
 
     rows = []
 
     try:
         # Liked Songs
         if include_liked:
-            liked_tracks = sp.current_user_saved_tracks(limit=50)
+            liked_tracks = sp.current_user_saved_tracks(limit=liked_limit)
             for item in liked_tracks['items']:
                 track = item['track']
                 rows.append({
@@ -235,7 +224,6 @@ def export_xlsx():
         wb = openpyxl.load_workbook(xlsx_path)
         ws = wb.active
 
-        # Set custom column widths (A = Source, B = Artist, etc.)
         column_widths = {
             "A": 20,
             "B": 25,
@@ -247,7 +235,6 @@ def export_xlsx():
         for col_letter, width in column_widths.items():
             ws.column_dimensions[col_letter].width = width
 
-        # Save changes
         wb.save(xlsx_path)
 
         return send_file(xlsx_path, as_attachment=True)
@@ -255,6 +242,47 @@ def export_xlsx():
     except Exception as e:
         print("Export error:", e)
         return jsonify({"error": "Export to Excel failed"}), 500
+
+@app.route("/callback")
+def callback():
+    sp_oauth = SpotifyOAuth(
+        client_id=os.getenv("SPOTIPY_CLIENT_ID"),
+        client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
+        redirect_uri="https://spotifytopdf.ngrok.app/callback",
+        scope="user-library-read playlist-read-private"
+    )
+
+    code = request.args.get("code")
+    if not code:
+        return "Authorization code not found", 400
+
+    token_info = sp_oauth.get_access_token(code)
+    access_token = token_info['access_token']
+
+    # Set a secure, HTTP-only cookie
+    print("✅ Access token set. Redirecting to /dash")
+    resp = make_response(redirect("/dash"))
+    resp.set_cookie(
+        "spotify_token",
+        access_token,
+        httponly=True,
+        secure=True,  # ensure HTTPS only
+        samesite="Lax",  # prevents CSRF in most cases
+        max_age=3600     # 1 hour token lifespan
+    )
+    return resp
+
+# React routes – catch-all
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_react(path):
+    print("Requested path:", path)
+    full_path = os.path.join(app.static_folder, path)
+    print("Full path:", full_path)
+
+    if path != "" and os.path.isfile(full_path):
+        return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, "index.html")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)

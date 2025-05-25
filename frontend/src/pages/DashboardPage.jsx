@@ -6,17 +6,21 @@ const DashboardPage = () => {
   const [likedSongs, setLikedSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [includeLiked, setIncludeLiked] = useState(true);
+  const [likedLimit, setLikedLimit] = useState(50);
   const [selectedPlaylists, setSelectedPlaylists] = useState([]);
-  const token = localStorage.getItem("access_token");
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/dashboard`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const res = await fetch(`https://spotifytopdf.ngrok.app/dashboard`, {
+          credentials: "include", // 🔑 send secure cookie
         });
+
+        if (res.status === 401) {
+          window.location.href = "/";
+          return;
+        }
+
         const data = await res.json();
         setLikedSongs(data.liked_songs || []);
         setPlaylists(data.playlists || []);
@@ -25,8 +29,8 @@ const DashboardPage = () => {
       }
     };
 
-    if (token) fetchDashboardData();
-  }, [token]);
+    fetchDashboardData();
+  }, []);
 
   const togglePlaylist = (playlistId) => {
     setSelectedPlaylists((prev) =>
@@ -66,8 +70,16 @@ const DashboardPage = () => {
       </div>
 
       <div style={{ display: "flex", gap: "1rem" }}>
-        <ExportPDFButton token={token} includeLiked={includeLiked} playlistIds={selectedPlaylists} />
-        <ExportExcelButton token={token} includeLiked={includeLiked} playlistIds={selectedPlaylists} />
+        <ExportPDFButton
+          includeLiked={includeLiked}
+          playlistIds={selectedPlaylists}
+          likedLimit={likedLimit}
+        />
+        <ExportExcelButton
+          includeLiked={includeLiked}
+          playlistIds={selectedPlaylists}
+          likedLimit={likedLimit}
+        />
       </div>
     </div>
   );
