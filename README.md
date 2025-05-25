@@ -1,5 +1,5 @@
 # SpotifyToPDF
-Turn Spotify playlists into PDF's to store in case Spotify servers ever remove songs or go down.
+Turn Spotify Liked Songs and playlists into .pdf and .xlsx files to store in case Spotify servers ever remove songs or go down.
 
 Built using a React.JS frontend and a Python Flask backend.
 
