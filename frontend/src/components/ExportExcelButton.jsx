@@ -1,14 +1,10 @@
 const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
   const handleExport = async () => {
-    console.log("Exporting Excel:", { includeLiked, playlistIds });
-
     try {
-      const res = await fetch(`https://spotifytopdf.ngrok.app/exportxlsx`, {
+      const res = await fetch("https://spotifytopdf.ngrok.app/exportxlsx", {
         method: "POST",
-        credentials: "include", // 👈 Send the cookie!
-        headers: {
-          "Content-Type": "application/json",
-        },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           include_liked: includeLiked,
           playlist_ids: playlistIds,
@@ -16,16 +12,52 @@ const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Export failed with status ${res.status}`);
-      }
+      if (!res.ok) throw new Error("Failed to start export");
 
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "spotify_export.xlsx";
-      a.click();
+      const { task_id } = await res.json();
+      console.log("📊 Excel task started:", task_id);
+
+      const pollStatus = async () => {
+        try {
+          const statusRes = await fetch(`https://spotifytopdf.ngrok.app/status/${task_id}`);
+          const { status, result } = await statusRes.json();
+
+          if (status === "SUCCESS" && result) {
+            const downloadRes = await fetch(`https://spotifytopdf.ngrok.app/download/${task_id}`, {
+              method: "GET",
+              credentials: "include",
+            });
+
+            if (downloadRes.status === 200) {
+              console.log("✅ Excel file ready. Downloading...");
+
+              const blob = await downloadRes.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "spotify_export.xlsx";
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            } else if (downloadRes.status === 202) {
+              console.log("⏳ File not ready yet, retrying...");
+              setTimeout(pollStatus, 1000);
+            } else {
+              throw new Error("Unexpected download status");
+            }
+          } else if (status === "FAILURE") {
+            alert("Excel export failed.");
+          } else {
+            setTimeout(pollStatus, 1000);
+          }
+        } catch (err) {
+          console.error("Polling error:", err);
+          setTimeout(pollStatus, 1500); // retry with slight backoff
+        }
+      };
+
+      pollStatus();
     } catch (err) {
       console.error("Excel export error:", err);
       alert("Excel export failed.");

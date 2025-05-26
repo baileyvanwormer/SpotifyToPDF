@@ -1,20 +1,32 @@
 # SpotifyToPDF
 Turn Spotify Liked Songs and playlists into .pdf and .xlsx files to store in case Spotify servers ever remove songs or go down.
 
-Built using a React.JS frontend and a Python Flask backend.
+Built using a React.JS frontend and a Python Flask backend. Using Redis and Celery for async background processes.
 
 **ngrok is running on a custom domain https://spotifytopdf.ngrok.app**
 
 Link to Spotify Dev site: https://developer.spotify.com/dashboard
 
 *Key commands to start application for dev testing*:
+    To start Redis:
+
+    cd into backend ->
+
+    brew services start redis ->
+
+    redis-cli ping (To ensure Redis is running properly)
+    
     To start Flask: 
     
     cd into backend -> 
     
     python3 app.py
 
-    To start ngrok (after Flask): New terminal -> 
+    To start Celery (must be after redis) ->
+
+    celery -A celery_worker.celery_app worker --loglevel=info
+
+    To start ngrok (must be after Flask): New terminal -> 
     
     ngrok http --url=spotifytopdf.ngrok.app 127.0.0.1:5000
 
