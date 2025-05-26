@@ -37,7 +37,6 @@ def login():
 # GET: fetch Liked songs and Playlists for a user using Spotify API
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    # Get token from secure cookie instead of header
     token = request.cookies.get("spotify_token")
     if not token:
         return jsonify({"error": "Missing or invalid token"}), 401
@@ -45,15 +44,19 @@ def dashboard():
     sp = spotipy.Spotify(auth=token)
 
     try:
-        # Get liked songs
-        liked = sp.current_user_saved_tracks(limit=50)
+        # ✅ Just fetch 1 liked song to get the total count
+        liked_response = sp.current_user_saved_tracks(limit=1)
+        liked_total = liked_response['total']
+
+        # ✅ You can skip collecting songs here if you’re only showing total
+        # or leave this empty or limited to 1
         liked_songs = [{
             "name": t['track']['name'],
             "artist": t['track']['artists'][0]['name'],
             "id": t['track']['id']
-        } for t in liked['items']]
+        } for t in liked_response['items']]
 
-        # Get playlists
+        # ✅ Get playlists as usual
         playlists = sp.current_user_playlists()
         playlist_list = [{
             "name": p['name'],
@@ -62,7 +65,8 @@ def dashboard():
         } for p in playlists['items']]
 
         return jsonify({
-            "liked_songs": liked_songs,
+            "liked_songs": liked_songs,  # can be empty or preview only
+            "liked_total": liked_total,  # ✅ new!
             "playlists": playlist_list
         })
 
@@ -75,7 +79,6 @@ def dashboard():
 def export():
     print("🟢 /export called")
 
-    # ✅ Get token from cookie, not Authorization header
     token = request.cookies.get("spotify_token")
     if not token:
         print("❌ Missing token in cookies for /export")
@@ -103,22 +106,23 @@ def export():
     # === Liked Songs Section ===
     if include_liked:
         liked_tracks = []
-        MAX_TRACKS = 50
-        track_count = 0
+        MAX_SPOTIFY_LIMIT = 50
+        fetched = 0
 
-        results = sp.current_user_saved_tracks(limit=liked_limit)
-        while results and track_count < MAX_TRACKS:
+        while fetched < liked_limit:
+            to_fetch = min(MAX_SPOTIFY_LIMIT, liked_limit - fetched)
+            print(f"Fetching liked songs: offset={fetched}, limit={to_fetch}")
+            results = sp.current_user_saved_tracks(limit=to_fetch, offset=fetched)
+
             for item in results['items']:
                 track = item['track']
                 artist = track['artists'][0]['name']
                 song = track['name']
                 liked_tracks.append((artist, song))
-                track_count += 1
-                if track_count >= MAX_TRACKS:
-                    break
-            if track_count < MAX_TRACKS and results['next']:
-                results = sp.next(results)
-            else:
+
+            fetched += to_fetch
+
+            if not results.get('next'):
                 break
 
         now = datetime.now().strftime("%B %d, %Y at %I:%M %p")
@@ -185,20 +189,32 @@ def export_xlsx():
     rows = []
 
     try:
-        # Liked Songs
+        # === Liked Songs Section (batched) ===
         if include_liked:
-            liked_tracks = sp.current_user_saved_tracks(limit=liked_limit)
-            for item in liked_tracks['items']:
-                track = item['track']
-                rows.append({
-                    "Source": "Liked Songs",
-                    "Track": track['name'],
-                    "Artist": track['artists'][0]['name'],
-                    "Album": track['album']['name'],
-                    "Duration (min)": round(track['duration_ms'] / 60000, 2)
-                })
+            MAX_SPOTIFY_LIMIT = 50
+            fetched = 0
 
-        # Selected Playlists
+            while fetched < liked_limit:
+                to_fetch = min(MAX_SPOTIFY_LIMIT, liked_limit - fetched)
+                print(f"Fetching liked songs: offset={fetched}, limit={to_fetch}")
+                results = sp.current_user_saved_tracks(limit=to_fetch, offset=fetched)
+
+                for item in results['items']:
+                    track = item['track']
+                    rows.append({
+                        "Source": "Liked Songs",
+                        "Track": track['name'],
+                        "Artist": track['artists'][0]['name'],
+                        "Album": track['album']['name'],
+                        "Duration (min)": round(track['duration_ms'] / 60000, 2)
+                    })
+
+                fetched += to_fetch
+
+                if not results.get("next"):
+                    break
+
+        # === Selected Playlists Section ===
         for pid in playlist_ids:
             playlist = sp.playlist(pid)
             playlist_name = playlist['name']
@@ -215,12 +231,11 @@ def export_xlsx():
                         "Duration (min)": round(track['duration_ms'] / 60000, 2)
                     })
 
-        # Convert to DataFrame and save as Excel
+        # === Write to Excel ===
         df = pd.DataFrame(rows)[["Source", "Artist", "Track", "Album", "Duration (min)"]]
         xlsx_path = os.path.join(os.path.dirname(__file__), "spotify_export.xlsx")
         df.to_excel(xlsx_path, index=False)
 
-        # Open the Excel file for editing
         wb = openpyxl.load_workbook(xlsx_path)
         ws = wb.active
 
