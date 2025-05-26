@@ -100,7 +100,10 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
                         "Artist": track['artists'][0]['name'],  # moved up
                         "Track": track['name'],
                         "Album": track['album']['name'],
-                        "Duration (min)": round(track['duration_ms'] / 60000, 2)
+                        "Duration (min)": "{:d}:{:02d}".format(
+                            (track['duration_ms'] // 60000),
+                            (track['duration_ms'] // 1000) % 60
+                        )
                     })
                 fetched += to_fetch
                 if not results.get('next'):
@@ -119,7 +122,10 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
                         "Artist": track['artists'][0]['name'],  # moved up
                         "Track": track['name'],
                         "Album": track['album']['name'],
-                        "Duration (min)": round(track['duration_ms'] / 60000, 2)
+                        "Duration (min)": "{:d}:{:02d}".format(
+                            (track['duration_ms'] // 60000),
+                            (track['duration_ms'] // 1000) % 60
+                        )
                     })
 
         if not rows:
