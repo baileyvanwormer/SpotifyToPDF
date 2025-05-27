@@ -1,7 +1,9 @@
 Flask
-spotipy
-fpdf
 flask-cors
-python-dotenv
 gunicorn
+spotipy
+python-dotenv
+fpdf
 pandas
+openpyxl
+celery
