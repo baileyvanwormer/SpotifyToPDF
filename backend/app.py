@@ -124,7 +124,7 @@ def callback():
 
     # Set a secure, HTTP-only cookie
     print("✅ Access token set. Redirecting to /dash")
-    resp = make_response(redirect("https://spotifytopdf.vercel.app/dash"))
+    resp = make_response(redirect("https://spotify-to-pdf.vercel.app/dash"))
     resp.set_cookie(
         "spotify_token",
         access_token,
