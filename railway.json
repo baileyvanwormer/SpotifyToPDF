@@ -1,5 +1,5 @@
 {
     "build": {
-      "root": "backend"
+      "root": "backend/"
     }
 }  

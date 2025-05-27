@@ -4,3 +4,4 @@ fpdf
 flask-cors
 python-dotenv
 gunicorn
+pandas
