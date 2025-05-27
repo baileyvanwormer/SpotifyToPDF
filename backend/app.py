@@ -26,7 +26,7 @@ print("🚀 Flask app is running from:", __file__)
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIPY_CLIENT_ID"),
     client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-    redirect_uri="https://spotifytopdf.ngrok.app/callback",
+    redirect_uri="https://backend-production-4f70.up.railway.app/callback",
     scope="user-library-read playlist-read-private"
 )
 
@@ -111,7 +111,7 @@ def callback():
     sp_oauth = SpotifyOAuth(
         client_id=os.getenv("SPOTIPY_CLIENT_ID"),
         client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-        redirect_uri="https://spotifytopdf.ngrok.app/callback",
+        redirect_uri="https://backend-production-4f70.up.railway.app/callback",
         scope="user-library-read playlist-read-private"
     )
 

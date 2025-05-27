@@ -1,7 +1,7 @@
 const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
   const handleExport = async () => {
     try {
-      const res = await fetch("https://spotifytopdf.ngrok.app/exportxlsx", {
+      const res = await fetch("https://backend-production-4f70.up.railway.app/exportxlsx", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -19,11 +19,11 @@ const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
 
       const pollStatus = async () => {
         try {
-          const statusRes = await fetch(`https://spotifytopdf.ngrok.app/status/${task_id}`);
+          const statusRes = await fetch(`https://backend-production-4f70.up.railway.app/status/${task_id}`);
           const { status, result } = await statusRes.json();
 
           if (status === "SUCCESS" && result) {
-            const downloadRes = await fetch(`https://spotifytopdf.ngrok.app/download/${task_id}`, {
+            const downloadRes = await fetch(`https://backend-production-4f70.up.railway.app/download/${task_id}`, {
               method: "GET",
               credentials: "include",
             });
