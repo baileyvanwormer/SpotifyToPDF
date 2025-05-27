@@ -17,7 +17,7 @@ from celery_worker import celery_app
 load_dotenv()
 
 app = Flask(__name__, static_folder="../frontend/dist")
-CORS(app)
+CORS(app, supports_credentials=True, origins=["https://spotify-to-pdf.vercel.app"])
 
 print("🚀 Flask app is running from:", __file__)
 
