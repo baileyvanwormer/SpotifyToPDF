@@ -132,6 +132,7 @@ def export_xlsx():
 
 @app.route("/callback")
 def callback():
+    resp = make_response("✅ Callback reached. Cookie should be set.")
     sp_oauth = SpotifyOAuth(
         client_id=os.getenv("SPOTIPY_CLIENT_ID"),
         client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
@@ -152,7 +153,15 @@ def callback():
     print(f"✅ Stored session:{session_token} → {access_token}")
 
     # ✅ Set session_token in cookie instead of spotify_token
-    resp = make_response(redirect("https://spotify-to-pdf.vercel.app/dash"))
+    resp = make_response(f"""
+    <html>
+    <body>
+        <h1>✅ Session cookie set</h1>
+        <p>session_token: {session_token}</p>
+        <p><a href="https://spotify-to-pdf.vercel.app/dash">Continue to dashboard</a></p>
+    </body>
+    </html>
+    """)
     resp.set_cookie(
         "session_token",
         session_token,
@@ -161,11 +170,8 @@ def callback():
         samesite="None",
         max_age=3600
     )
-
-    # 🧹 (Optional) Clear old spotify_token if it ever existed
-    resp.set_cookie("spotify_token", "", expires=0)
-
     return resp
+
 
 @app.route("/status/<task_id>")
 def check_status(task_id):
