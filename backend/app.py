@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, redirect, send_file, send_from_directory, make_response
+from flask import Flask, json, jsonify, request, redirect, send_file, send_from_directory, make_response
 from flask_cors import CORS
 from spotipy.oauth2 import SpotifyOAuth
 import os
@@ -62,7 +62,17 @@ def dashboard():
     if not session_token:
         return jsonify({"error": "Missing session token"}), 401
 
-    access_token = r.get(f"session:{session_token}")
+    raw = r.get(f"session:{session_token}")
+    token_info = json.loads(raw)
+
+    # Refresh if token is expired
+    if sp_oauth.is_token_expired(token_info):
+        token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+        r.setex(f"session:{session_token}", 3600, json.dumps(token_info))  # update Redis
+
+    access_token = token_info["access_token"]
+    sp = spotipy.Spotify(auth=access_token)
+
     print(f"🧠 Redis lookup for session:{session_token} → {access_token}")
 
     if not access_token:
@@ -189,7 +199,8 @@ def exchange_code():
     access_token = token_info['access_token']
 
     session_token = str(uuid4())
-    r.setex(f"session:{session_token}", 3600, access_token)
+    r.setex(f"session:{session_token}", 3600, json.dumps(token_info))
+
 
     resp = jsonify({"message": "✅ Session created"})
     resp.set_cookie(
@@ -197,11 +208,10 @@ def exchange_code():
         session_token,
         httponly=True,
         secure=True,
-        samesite="None",
+        samesite="None",  # Must be exactly like this, with capital "N"
         max_age=3600
     )
-    # After setting Redis:
-    print(f"✅ Stored in Redis: session:{session_token} → {access_token}")
+    print(f"✅ Setting session_token cookie: {session_token}")
 
     return resp
 

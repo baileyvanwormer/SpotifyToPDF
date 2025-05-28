@@ -18,10 +18,11 @@ const Callback = () => {
     })
       .then((res) => res.json())
       .then(() => {
-        window.location.href = "/dash";
+        window.location.href = "https://spotify-to-pdf.vercel.app/dash";
       })
       .catch((err) => {
         console.error("Token exchange failed", err);
+        alert("Authentication failed. Please try logging in again.");
       });
   }, []);
 
