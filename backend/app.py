@@ -129,10 +129,11 @@ def callback():
         "spotify_token",
         access_token,
         httponly=True,
-        secure=True,
-        samesite="None",  # allow cross-site cookies
+        secure=True,  # must be true for cross-site
+        samesite="None",  # allow cross-origin cookies
         max_age=3600
     )
+
     return resp
 
 @app.route("/status/<task_id>")
