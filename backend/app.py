@@ -13,6 +13,9 @@ from spotipy.oauth2 import SpotifyOAuth
 from tasks import generate_pdf, generate_excel
 from celery.result import AsyncResult
 from celery_worker import celery_app
+from uuid import uuid4
+import redis
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -21,6 +24,19 @@ CORS(app, supports_credentials=True, origins=["https://spotify-to-pdf.vercel.app
 
 print("🚀 Flask app is running from:", __file__)
 
+from urllib.parse import urlparse
+
+# Parse Redis URL from environment variable
+redis_url = os.getenv("REDIS_URL")
+parsed_url = urlparse(redis_url)
+
+r = redis.Redis(
+    host=parsed_url.hostname,
+    port=parsed_url.port,
+    username=parsed_url.username,
+    password=parsed_url.password,
+    ssl=parsed_url.scheme == "rediss"
+)
 
 # 🔥 THIS is the missing part:
 sp_oauth = SpotifyOAuth(
@@ -113,8 +129,6 @@ def export_xlsx():
 
     task = generate_excel.delay(token, include_liked, playlist_ids, liked_limit)
     return jsonify({"task_id": task.id, "status": "processing"}), 202
-
-from uuid import uuid4
 
 @app.route("/callback")
 def callback():
