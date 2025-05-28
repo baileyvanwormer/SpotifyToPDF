@@ -13,20 +13,6 @@ from spotipy.oauth2 import SpotifyOAuth
 from tasks import generate_pdf, generate_excel
 from celery.result import AsyncResult
 from celery_worker import celery_app
-import uuid
-import redis
-from urllib.parse import urlparse
-
-redis_url = os.getenv("REDIS_URL")
-parsed_url = urlparse(redis_url)
-
-r = redis.Redis(
-    host=parsed_url.hostname,
-    port=parsed_url.port,
-    username=parsed_url.username,
-    password=parsed_url.password,
-    ssl=parsed_url.scheme == "rediss"
-)
 
 load_dotenv()
 
@@ -54,32 +40,26 @@ def login():
 # GET: fetch Liked songs and Playlists for a user using Spotify API
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    session_token = request.cookies.get("session_token")
-    print(f"🔍 Received session_token cookie: {session_token}")
+    token = request.cookies.get("spotify_token")
+    if not token:
+        return jsonify({"error": "Missing or invalid token"}), 401
 
-    if not session_token:
-        print("❌ No session_token cookie found in request.")
-        return jsonify({"error": "Missing session token"}), 401
-
-    access_token = r.get(f"session:{session_token}")
-    print(f"🧠 Redis lookup result for session:{session_token} → {access_token}")
-
-    if not access_token:
-        print("❌ Redis session token not found or expired.")
-        return jsonify({"error": "Session expired or invalid"}), 403
-
-    sp = spotipy.Spotify(auth=access_token)
+    sp = spotipy.Spotify(auth=token)
 
     try:
+        # ✅ Just fetch 1 liked song to get the total count
         liked_response = sp.current_user_saved_tracks(limit=1)
         liked_total = liked_response['total']
 
+        # ✅ You can skip collecting songs here if you’re only showing total
+        # or leave this empty or limited to 1
         liked_songs = [{
             "name": t['track']['name'],
             "artist": t['track']['artists'][0]['name'],
             "id": t['track']['id']
         } for t in liked_response['items']]
 
+        # ✅ Get playlists as usual
         playlists = sp.current_user_playlists()
         playlist_list = [{
             "name": p['name'],
@@ -87,17 +67,15 @@ def dashboard():
             "track_count": p['tracks']['total']
         } for p in playlists['items']]
 
-        print(f"✅ Returning dashboard data: {len(liked_songs)} liked songs, {len(playlist_list)} playlists")
-
         return jsonify({
-            "liked_songs": liked_songs,
-            "liked_total": liked_total,
+            "liked_songs": liked_songs,  # can be empty or preview only
+            "liked_total": liked_total,  # ✅ new!
             "playlists": playlist_list
         })
 
     except spotipy.SpotifyException as e:
-        print(f"❌ Spotify API error: {str(e)}")
         return jsonify({"error": str(e)}), 401
+
 
 # POST: send user Spotify access token to fetch Liked Songs and Playlist data from Spotify API
 @app.route("/export", methods=["POST"])
@@ -144,23 +122,18 @@ def callback():
     token_info = sp_oauth.get_access_token(code)
     access_token = token_info['access_token']
 
-    # Generate a secure, random session token
-    session_token = str(uuid.uuid4())
-
-    # Store it in Redis for 1 hour
-    r.setex(f"session:{session_token}", 3600, access_token)
-
-    # Set a secure cookie with just the session token
+    # Set a secure, HTTP-only cookie
+    print("✅ Access token set. Redirecting to /dash")
     resp = make_response(redirect("https://spotify-to-pdf.vercel.app/dash"))
     resp.set_cookie(
-        "session_token",
-        session_token,
+        "spotify_token",
+        access_token,
         httponly=True,
-        secure=True,
-        samesite="None",
+        secure=True,  # must be true for cross-site
+        samesite="None",  # allow cross-origin cookies
         max_age=3600
     )
-    print(f"✅ Setting session_token cookie: {session_token}")
+
     return resp
 
 @app.route("/status/<task_id>")
@@ -223,4 +196,3 @@ if __name__ == "__main__":
         port=int(os.environ.get("PORT", 5000)),
         debug=False
     )
-
