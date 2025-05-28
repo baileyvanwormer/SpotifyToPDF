@@ -42,7 +42,7 @@ r = redis.Redis(
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIPY_CLIENT_ID"),
     client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-    redirect_uri="https://backend-production-4f70.up.railway.app/callback",
+    redirect_uri="https://spotify-to-pdf.vercel.app/callback",
     scope="user-library-read playlist-read-private"
 )
 
@@ -181,7 +181,7 @@ def exchange_code():
     sp_oauth = SpotifyOAuth(
         client_id=os.getenv("SPOTIPY_CLIENT_ID"),
         client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-        redirect_uri="https://spotify-to-pdf.vercel.app/spotify-callback",
+        redirect_uri="https://spotify-to-pdf.vercel.app/callback",
         scope="user-library-read playlist-read-private"
     )
 
