@@ -122,15 +122,38 @@ def callback():
     token_info = sp_oauth.get_access_token(code)
     access_token = token_info['access_token']
 
-    # Set a secure, HTTP-only cookie
-    print("✅ Access token set. Redirecting to /dash")
-    resp = make_response(redirect("https://spotify-to-pdf.vercel.app/dash"))
+    print("✅ Access token set. Redirecting to frontend with form submission")
+
+    # Serve a minimal auto-submitting form to satisfy Safari
+    html = """
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Redirecting...</title>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: sans-serif; text-align: center; padding: 50px; }
+        </style>
+      </head>
+      <body>
+        <p>Login successful. Redirecting to your dashboard...</p>
+        <form id="redir" method="GET" action="https://spotify-to-pdf.vercel.app/dash">
+          <noscript><input type="submit" value="Continue" /></noscript>
+        </form>
+        <script>
+          document.getElementById('redir').submit();
+        </script>
+      </body>
+    </html>
+    """
+
+    resp = make_response(html)
     resp.set_cookie(
         "spotify_token",
         access_token,
         httponly=True,
-        secure=True,  # must be true for cross-site
-        samesite="None",  # allow cross-origin cookies
+        secure=True,
+        samesite="None",
         max_age=3600
     )
 
