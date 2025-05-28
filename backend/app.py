@@ -129,9 +129,9 @@ def callback():
         "spotify_token",
         access_token,
         httponly=True,
-        secure=True,  # ensure HTTPS only
-        samesite="Lax",  # prevents CSRF in most cases
-        max_age=3600     # 1 hour token lifespan
+        secure=True,
+        samesite="None",  # allow cross-site cookies
+        max_age=3600
     )
     return resp
 
