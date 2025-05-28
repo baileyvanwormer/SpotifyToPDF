@@ -55,17 +55,22 @@ def login():
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     session_token = request.cookies.get("session_token")
+    print(f"🔍 Received session_token cookie: {session_token}")
+
     if not session_token:
+        print("❌ No session_token cookie found in request.")
         return jsonify({"error": "Missing session token"}), 401
 
     access_token = r.get(f"session:{session_token}")
+    print(f"🧠 Redis lookup result for session:{session_token} → {access_token}")
+
     if not access_token:
+        print("❌ Redis session token not found or expired.")
         return jsonify({"error": "Session expired or invalid"}), 403
 
     sp = spotipy.Spotify(auth=access_token)
 
     try:
-        # ✅ Fetch liked songs (limited)
         liked_response = sp.current_user_saved_tracks(limit=1)
         liked_total = liked_response['total']
 
@@ -75,13 +80,14 @@ def dashboard():
             "id": t['track']['id']
         } for t in liked_response['items']]
 
-        # ✅ Get user playlists
         playlists = sp.current_user_playlists()
         playlist_list = [{
             "name": p['name'],
             "id": p['id'],
             "track_count": p['tracks']['total']
         } for p in playlists['items']]
+
+        print(f"✅ Returning dashboard data: {len(liked_songs)} liked songs, {len(playlist_list)} playlists")
 
         return jsonify({
             "liked_songs": liked_songs,
@@ -90,6 +96,7 @@ def dashboard():
         })
 
     except spotipy.SpotifyException as e:
+        print(f"❌ Spotify API error: {str(e)}")
         return jsonify({"error": str(e)}), 401
 
 # POST: send user Spotify access token to fetch Liked Songs and Playlist data from Spotify API
