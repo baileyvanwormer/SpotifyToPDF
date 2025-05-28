@@ -172,6 +172,35 @@ def callback():
     )
     return resp
 
+@app.route("/exchange", methods=["POST"])
+def exchange_code():
+    code = request.json.get("code")
+    if not code:
+        return jsonify({"error": "Missing code"}), 400
+
+    sp_oauth = SpotifyOAuth(
+        client_id=os.getenv("SPOTIPY_CLIENT_ID"),
+        client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
+        redirect_uri="https://spotify-to-pdf.vercel.app/spotify-callback",
+        scope="user-library-read playlist-read-private"
+    )
+
+    token_info = sp_oauth.get_access_token(code)
+    access_token = token_info['access_token']
+
+    session_token = str(uuid4())
+    r.setex(f"session:{session_token}", 3600, access_token)
+
+    resp = jsonify({"message": "✅ Session created"})
+    resp.set_cookie(
+        "session_token",
+        session_token,
+        httponly=True,
+        secure=True,
+        samesite="None",
+        max_age=3600
+    )
+    return resp
 
 @app.route("/status/<task_id>")
 def check_status(task_id):
