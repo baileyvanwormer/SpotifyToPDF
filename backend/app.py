@@ -160,6 +160,7 @@ def callback():
         samesite="None",
         max_age=3600
     )
+    print(f"✅ Setting session_token cookie: {session_token}")
     return resp
 
 @app.route("/status/<task_id>")
