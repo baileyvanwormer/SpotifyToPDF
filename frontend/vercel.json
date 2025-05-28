@@ -1,0 +1,37 @@
+{
+    "rewrites": [
+      {
+        "source": "/dashboard",
+        "destination": "https://backend-production-4f70.up.railway.app/dashboard"
+      },
+      {
+        "source": "/export",
+        "destination": "https://backend-production-4f70.up.railway.app/export"
+      },
+      {
+        "source": "/exportxlsx",
+        "destination": "https://backend-production-4f70.up.railway.app/exportxlsx"
+      },
+      {
+        "source": "/login",
+        "destination": "https://backend-production-4f70.up.railway.app/login"
+      },
+      {
+        "source": "/callback",
+        "destination": "https://backend-production-4f70.up.railway.app/callback"
+      },
+      {
+        "source": "/status/:task_id",
+        "destination": "https://backend-production-4f70.up.railway.app/status/:task_id"
+      },
+      {
+        "source": "/download/:task_id",
+        "destination": "https://backend-production-4f70.up.railway.app/download/:task_id"
+      },
+      {
+        "source": "/:path*",
+        "destination": "/index.html"
+      }
+    ]
+}
+  
