@@ -130,47 +130,47 @@ def export_xlsx():
     task = generate_excel.delay(token, include_liked, playlist_ids, liked_limit)
     return jsonify({"task_id": task.id, "status": "processing"}), 202
 
-@app.route("/callback")
-def callback():
-    resp = make_response("✅ Callback reached. Cookie should be set.")
-    sp_oauth = SpotifyOAuth(
-        client_id=os.getenv("SPOTIPY_CLIENT_ID"),
-        client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-        redirect_uri="https://backend-production-4f70.up.railway.app/callback",
-        scope="user-library-read playlist-read-private"
-    )
+# @app.route("/callback")
+# def callback():
+#     resp = make_response("✅ Callback reached. Cookie should be set.")
+#     sp_oauth = SpotifyOAuth(
+#         client_id=os.getenv("SPOTIPY_CLIENT_ID"),
+#         client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
+#         redirect_uri="https://backend-production-4f70.up.railway.app/callback",
+#         scope="user-library-read playlist-read-private"
+#     )
 
-    code = request.args.get("code")
-    if not code:
-        return "Authorization code not found", 400
+#     code = request.args.get("code")
+#     if not code:
+#         return "Authorization code not found", 400
 
-    token_info = sp_oauth.get_access_token(code)
-    access_token = token_info['access_token']
+#     token_info = sp_oauth.get_access_token(code)
+#     access_token = token_info['access_token']
 
-    # ✅ Generate and store session token
-    session_token = str(uuid4())
-    r.setex(f"session:{session_token}", 3600, access_token)
-    print(f"✅ Stored session:{session_token} → {access_token}")
+#     # ✅ Generate and store session token
+#     session_token = str(uuid4())
+#     r.setex(f"session:{session_token}", 3600, access_token)
+#     print(f"✅ Stored session:{session_token} → {access_token}")
 
-    # ✅ Set session_token in cookie instead of spotify_token
-    resp = make_response(f"""
-    <html>
-    <body>
-        <h1>✅ Session cookie set</h1>
-        <p>session_token: {session_token}</p>
-        <p><a href="https://spotify-to-pdf.vercel.app/dash">Continue to dashboard</a></p>
-    </body>
-    </html>
-    """)
-    resp.set_cookie(
-        "session_token",
-        session_token,
-        httponly=True,
-        secure=True,
-        samesite="None",
-        max_age=3600
-    )
-    return resp
+#     # ✅ Set session_token in cookie instead of spotify_token
+#     resp = make_response(f"""
+#     <html>
+#     <body>
+#         <h1>✅ Session cookie set</h1>
+#         <p>session_token: {session_token}</p>
+#         <p><a href="https://spotify-to-pdf.vercel.app/dash">Continue to dashboard</a></p>
+#     </body>
+#     </html>
+#     """)
+#     resp.set_cookie(
+#         "session_token",
+#         session_token,
+#         httponly=True,
+#         secure=True,
+#         samesite="None",
+#         max_age=3600
+#     )
+#     return resp
 
 @app.route("/exchange", methods=["POST"])
 def exchange_code():
