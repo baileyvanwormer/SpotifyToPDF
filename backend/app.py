@@ -15,9 +15,18 @@ from celery.result import AsyncResult
 from celery_worker import celery_app
 import uuid
 import redis
+from urllib.parse import urlparse
 
-# Set up Redis client (or use any in-memory store)
-r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+redis_url = os.getenv("REDIS_URL")
+parsed_url = urlparse(redis_url)
+
+r = redis.Redis(
+    host=parsed_url.hostname,
+    port=parsed_url.port,
+    username=parsed_url.username,
+    password=parsed_url.password,
+    ssl=parsed_url.scheme == "rediss"
+)
 
 load_dotenv()
 
