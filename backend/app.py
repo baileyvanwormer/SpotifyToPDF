@@ -40,11 +40,19 @@ def login():
 # GET: fetch Liked songs and Playlists for a user using Spotify API
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    token = request.cookies.get("spotify_token")
-    if not token:
-        return jsonify({"error": "Missing or invalid token"}), 401
+    session_token = request.cookies.get("session_token")
+    print(f"🔍 Received session_token cookie: {session_token}")
 
-    sp = spotipy.Spotify(auth=token)
+    if not session_token:
+        return jsonify({"error": "Missing session token"}), 401
+
+    access_token = r.get(f"session:{session_token}")
+    print(f"🧠 Redis lookup for session:{session_token} → {access_token}")
+
+    if not access_token:
+        return jsonify({"error": "Session expired or invalid"}), 403
+
+    sp = spotipy.Spotify(auth=access_token)
 
     try:
         # ✅ Just fetch 1 liked song to get the total count
@@ -106,6 +114,8 @@ def export_xlsx():
     task = generate_excel.delay(token, include_liked, playlist_ids, liked_limit)
     return jsonify({"task_id": task.id, "status": "processing"}), 202
 
+from uuid import uuid4
+
 @app.route("/callback")
 def callback():
     sp_oauth = SpotifyOAuth(
@@ -122,17 +132,24 @@ def callback():
     token_info = sp_oauth.get_access_token(code)
     access_token = token_info['access_token']
 
-    # Set a secure, HTTP-only cookie
-    print("✅ Access token set. Redirecting to /dash")
+    # ✅ Generate and store session token
+    session_token = str(uuid4())
+    r.setex(f"session:{session_token}", 3600, access_token)
+    print(f"✅ Stored session:{session_token} → {access_token}")
+
+    # ✅ Set session_token in cookie instead of spotify_token
     resp = make_response(redirect("https://spotify-to-pdf.vercel.app/dash"))
     resp.set_cookie(
-        "spotify_token",
-        access_token,
+        "session_token",
+        session_token,
         httponly=True,
-        secure=True,  # must be true for cross-site
-        samesite="None",  # allow cross-origin cookies
+        secure=True,
+        samesite="None",
         max_age=3600
     )
+
+    # 🧹 (Optional) Clear old spotify_token if it ever existed
+    resp.set_cookie("spotify_token", "", expires=0)
 
     return resp
 
