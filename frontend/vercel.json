@@ -17,10 +17,6 @@
         "destination": "https://backend-production-4f70.up.railway.app/login"
       },
       {
-        "source": "/callback",
-        "destination": "https://backend-production-4f70.up.railway.app/callback"
-      },
-      {
         "source": "/status/:task_id",
         "destination": "https://backend-production-4f70.up.railway.app/status/:task_id"
       },
