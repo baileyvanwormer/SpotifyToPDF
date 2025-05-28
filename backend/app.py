@@ -200,6 +200,9 @@ def exchange_code():
         samesite="None",
         max_age=3600
     )
+    # After setting Redis:
+    print(f"✅ Stored in Redis: session:{session_token} → {access_token}")
+
     return resp
 
 @app.route("/status/<task_id>")
