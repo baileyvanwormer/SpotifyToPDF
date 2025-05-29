@@ -51,7 +51,7 @@ const DashboardPage = () => {
 
   const handleSelectAll = (checked) => {
     setSelectAll(checked);
-    setSelectedPlaylists(checked ? playlists.map(p => p.id) : []);
+    setSelectedPlaylists(checked ? playlists.map((p) => p.id) : []);
   };
 
   return (
@@ -60,34 +60,61 @@ const DashboardPage = () => {
       <p>Choose the playlists you want to export and whether to include Liked Songs.</p>
 
       <div style={{ marginBottom: "1rem" }}>
-        <label>
+        <h3>Liked Songs</h3>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            padding: "0.5rem",
+            width: "300px",
+            marginBottom: "1rem",
+            backgroundColor: "#f9f9f9",
+          }}
+        >
           <input
             type="checkbox"
             checked={includeLiked}
             onChange={(e) => setIncludeLiked(e.target.checked)}
+            style={{ marginRight: "0.75rem" }}
           />
-          Include Liked Songs
-        </label>
-      </div>
-
-      {includeLiked && likedTotal > 0 && (
-        <div style={{ marginBottom: "1rem" }}>
-          <label>
-            How many liked songs to include:&nbsp;
-            <select
-              value={likedLimit}
-              onChange={(e) => setLikedLimit(parseInt(e.target.value))}
-            >
-              <option value={1}>1</option>
-              {Array.from({ length: Math.floor(likedTotal / 50) }, (_, i) => (i + 1) * 50).map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
+          <img
+            src="https://misc.scdn.co/liked-songs/liked-songs-300.png"
+            alt="Liked Songs"
+            style={{
+              width: "64px",
+              height: "64px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              marginRight: "0.75rem",
+            }}
+          />
+          <div>
+            <strong style={{ color: "#000" }}>Liked Songs</strong>
+            <div style={{ fontSize: "0.85rem", color: "#666" }}>
+              {likedTotal} saved tracks
+            </div>
+            {includeLiked && likedTotal > 0 && (
+              <div style={{ marginTop: "0.5rem" }}>
+                <label style={{ fontSize: "0.8rem" }}>
+                  How many to export:&nbsp;
+                  <select
+                    value={likedLimit}
+                    onChange={(e) => setLikedLimit(parseInt(e.target.value))}
+                  >
+                    {Array.from({ length: Math.ceil(likedTotal / 50) }, (_, i) => (i + 1) * 50).map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       <div style={{ marginBottom: "1rem" }}>
         <h3>My Playlists</h3>
@@ -111,6 +138,7 @@ const DashboardPage = () => {
                 borderRadius: "8px",
                 padding: "0.5rem",
                 width: "300px",
+                backgroundColor: "#f9f9f9",
               }}
             >
               <input
@@ -122,10 +150,16 @@ const DashboardPage = () => {
               <img
                 src={playlist.image || "/default-cover.png"}
                 alt={playlist.name}
-                style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "8px", marginRight: "0.75rem" }}
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                  marginRight: "0.75rem",
+                }}
               />
               <div>
-                <strong>{playlist.name}</strong>
+                <strong style={{ color: "#000" }}>{playlist.name}</strong>
                 <div style={{ fontSize: "0.85rem", color: "#666" }}>
                   {playlist.track_count} tracks
                 </div>

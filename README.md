@@ -5,6 +5,12 @@ Link to website: https://www.exportmymusic.com
 
 Built using a React.JS frontend and a Python Flask backend. Using Redis and Celery for async background processes. Deployed on Vercel (frontend) and Railway (backend). Using Amazon s3 storage to save .xlsx and .pdf for download to manage traffic.
 
+Future Feature Ideas Include: 
+    - Add more streaming services to .xlsx and .pdf export
+    - Add a way for streaming service users to create a playlist on their service, thru my site convert it into a playlist on a different site, then share it with a friend
+    - Make the previously mentioned features available on Spotify, Apple Music, Amazon Music, Tidal, etc.
+    - Cool listening statistics for users for every streaming service
+
 Link to Spotify Dev site: https://developer.spotify.com/dashboard
 
 *Key commands to start application for dev testing*:
