@@ -232,10 +232,19 @@ def exchange_code():
 @app.route("/status/<task_id>")
 def check_status(task_id):
     result = AsyncResult(task_id, app=celery_app)
-    return jsonify({
-        "status": result.status,
-        "result": result.result if result.ready() else None
-    })
+    response = {"status": result.status}
+
+    if result.ready():
+        try:
+            response["result"] = result.get()
+        except Exception as e:
+            response["status"] = "FAILURE"
+            response["result"] = str(e)  # Ensure it's serializable
+
+    else:
+        response["result"] = None
+
+    return jsonify(response)
 
 @app.route("/download/<task_id>")
 def download_file(task_id):
