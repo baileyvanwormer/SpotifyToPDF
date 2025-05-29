@@ -1,5 +1,5 @@
 from flask import Flask, json, jsonify, request, redirect, send_file, send_from_directory, make_response
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from spotipy.oauth2 import SpotifyOAuth
 import os
 from dotenv import load_dotenv
@@ -183,6 +183,7 @@ def export_xlsx():
 #     return resp
 
 @app.route("/exchange", methods=["POST"])
+@cross_origin(origins="https://exportmymusic.com", supports_credentials=True)
 def exchange_code():
     code = request.json.get("code")
     if not code:
