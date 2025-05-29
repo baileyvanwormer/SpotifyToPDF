@@ -47,6 +47,8 @@ def generate_pdf(session_token, include_liked, playlist_ids, liked_limit):
     font_dir = os.path.join(os.path.dirname(__file__), "fonts")
     pdf = FPDF()
     pdf.add_page()
+    print("📂 Font dir contents:", os.listdir(font_dir))
+    print("📍 Font path:", os.path.join(font_dir, "NotoSans-Medium.ttf"))
     pdf.add_font("NotoSans", "", os.path.join(font_dir, "NotoSans-Medium.ttf"), uni=True)
     pdf.add_font("NotoSans", "B", os.path.join(font_dir, "NotoSans-Bold.ttf"), uni=True)
     pdf.add_font("NotoSans", "I", os.path.join(font_dir, "NotoSans-Italic.ttf"), uni=True)
@@ -104,8 +106,7 @@ def generate_pdf(session_token, include_liked, playlist_ids, liked_limit):
             pdf.ln(1)
 
     pdf_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "spotify_export.pdf"))
-    with open(pdf_path, "wb") as f:
-        pdf.output(f)
+    pdf.output(pdf_path)
     url = upload_to_s3(pdf_path)
     print(f"✅ Returning S3 URL: {url}")
     return url
