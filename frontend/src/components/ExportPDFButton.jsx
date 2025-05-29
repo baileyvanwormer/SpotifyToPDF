@@ -1,3 +1,5 @@
+import React from "react";
+
 const ExportPDFButton = ({ includeLiked, playlistIds, likedLimit }) => {
   const handleExport = async () => {
     try {
@@ -22,30 +24,18 @@ const ExportPDFButton = ({ includeLiked, playlistIds, likedLimit }) => {
           const statusRes = await fetch(`https://api.exportmymusic.com/status/${task_id}`);
           const { status, result } = await statusRes.json();
 
+          console.log("status:", status);
+          console.log("result:", result);
+
           if (status === "SUCCESS" && result) {
-            const downloadRes = await fetch(`https://api.exportmymusic.com/download/${task_id}`, {
-              method: "GET",
-              credentials: "include",
-            });
+            console.log("✅ PDF file ready at:", result);
 
-            if (downloadRes.status === 200) {
-              console.log("✅ PDF ready, downloading...");
-
-              const blob = await downloadRes.blob();
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "spotify_export.pdf";
-              document.body.appendChild(a);
-              a.click();
-              a.remove();
-              window.URL.revokeObjectURL(url);
-            } else if (downloadRes.status === 202) {
-              console.log("⏳ PDF file not ready yet, retrying...");
-              setTimeout(pollStatus, 1000);
-            } else {
-              throw new Error("Unexpected download status");
-            }
+            const link = document.createElement("a");
+            link.href = result;
+            link.download = "spotify_export.pdf";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
           } else if (status === "FAILURE") {
             alert("PDF export failed.");
           } else {

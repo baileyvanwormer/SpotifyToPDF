@@ -1,3 +1,5 @@
+import React from "react";
+
 const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
   const handleExport = async () => {
     try {
@@ -21,43 +23,27 @@ const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
         try {
           const statusRes = await fetch(`https://api.exportmymusic.com/status/${task_id}`);
           const { status, result } = await statusRes.json();
-          
-          console.log("status: " + status)
-          console.log("result: " + result)
+
+          console.log("status:", status);
+          console.log("result:", result);
+
           if (status === "SUCCESS" && result) {
-            console.log("status === SUCCESS && result")
-            const downloadRes = await fetch(`https://api.exportmymusic.com/download/${task_id}`, {
-              method: "GET",
-              credentials: "include",
-            });
+            console.log("✅ Excel file ready at:", result);
 
-            if (downloadRes.status === 200) {
-              console.log("✅ Excel file ready. Downloading...");
-
-              const blob = await downloadRes.blob();
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "spotify_export.xlsx";
-              document.body.appendChild(a);
-              a.click();
-              a.remove();
-              window.URL.revokeObjectURL(url);
-            } else if (downloadRes.status === 202) {
-              console.log("⏳ File not ready yet, retrying...");
-              setTimeout(pollStatus, 1000);
-            } else {
-              throw new Error("Unexpected download status");
-            }
+            const link = document.createElement("a");
+            link.href = result;
+            link.download = "spotify_export.xlsx";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
           } else if (status === "FAILURE") {
             alert("Excel export failed.");
           } else {
-            console.log("No Success")
             setTimeout(pollStatus, 1000);
           }
         } catch (err) {
           console.error("Polling error:", err);
-          setTimeout(pollStatus, 1500); // retry with slight backoff
+          setTimeout(pollStatus, 1500);
         }
       };
 
