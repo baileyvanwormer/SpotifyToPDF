@@ -1,9 +1,9 @@
-# SpotifyToPDF
+# ExportMyMusic.com
 Turn Spotify Liked Songs and playlists into .pdf and .xlsx files to store in case Spotify servers ever remove songs or go down.
 
-Built using a React.JS frontend and a Python Flask backend. Using Redis and Celery for async background processes.
+Link to website: https://www.exportmymusic.com
 
-**ngrok is running on a custom domain https://spotifytopdf.ngrok.app**
+Built using a React.JS frontend and a Python Flask backend. Using Redis and Celery for async background processes. Deployed on Vercel (frontend) and Railway (backend). Using Amazon s3 storage to save .xlsx and .pdf for download to manage traffic.
 
 Link to Spotify Dev site: https://developer.spotify.com/dashboard
 
