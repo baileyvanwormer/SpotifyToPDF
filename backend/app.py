@@ -20,7 +20,10 @@ from urllib.parse import urlparse
 load_dotenv()
 
 app = Flask(__name__, static_folder="../frontend/dist")
-CORS(app, supports_credentials=True, origins=["https://exportmymusic.com"])
+CORS(app, supports_credentials=True, origins=[
+    "https://exportmymusic.com",
+    "https://www.exportmymusic.com"
+])
 
 print("🚀 Flask app is running from:", __file__)
 
@@ -210,7 +213,8 @@ def exchange_code():
         httponly=True,
         secure=True,
         samesite="None",  # Must be exactly like this, with capital "N"
-        max_age=3600
+        max_age=3600,
+        domain=".exportmymusic.com"
     )
     print(f"✅ Setting session_token cookie: {session_token}")
 
