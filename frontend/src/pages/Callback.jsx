@@ -10,7 +10,7 @@ const Callback = () => {
       return;
     }
 
-    fetch("https://backend-production-4f70.up.railway.app/exchange", {
+    fetch("https://api.exportmymusic.com/exchange", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include", // IMPORTANT to accept the session_token cookie
@@ -18,7 +18,7 @@ const Callback = () => {
     })
       .then((res) => res.json())
       .then(() => {
-        window.location.href = "https://spotify-to-pdf.vercel.app/dash";
+        window.location.href = "https://exportmymusic.com/dash";
       })
       .catch((err) => {
         console.error("Token exchange failed", err);

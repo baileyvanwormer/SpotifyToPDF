@@ -14,7 +14,7 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const res = await fetch(`https://backend-production-4f70.up.railway.app/dashboard`, {
+        const res = await fetch(`https://api.exportmymusic.com/dashboard`, {
           credentials: "include",
         });
 

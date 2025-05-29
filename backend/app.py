@@ -20,7 +20,7 @@ from urllib.parse import urlparse
 load_dotenv()
 
 app = Flask(__name__, static_folder="../frontend/dist")
-CORS(app, supports_credentials=True, origins=["https://spotify-to-pdf.vercel.app"])
+CORS(app, supports_credentials=True, origins=["https://exportmymusic.com"])
 
 print("🚀 Flask app is running from:", __file__)
 
@@ -42,7 +42,7 @@ r = redis.Redis(
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIPY_CLIENT_ID"),
     client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-    redirect_uri="https://spotify-to-pdf.vercel.app/callback",
+    redirect_uri="https://exportmymusic.com/callback",
     scope="user-library-read playlist-read-private"
 )
 
@@ -146,7 +146,7 @@ def export_xlsx():
 #     sp_oauth = SpotifyOAuth(
 #         client_id=os.getenv("SPOTIPY_CLIENT_ID"),
 #         client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-#         redirect_uri="https://backend-production-4f70.up.railway.app/callback",
+#         redirect_uri="https://exportmymusic.com/callback",
 #         scope="user-library-read playlist-read-private"
 #     )
 
@@ -191,7 +191,7 @@ def exchange_code():
     sp_oauth = SpotifyOAuth(
         client_id=os.getenv("SPOTIPY_CLIENT_ID"),
         client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-        redirect_uri="https://spotify-to-pdf.vercel.app/callback",
+        redirect_uri="https://exportmymusic.com/callback",
         scope="user-library-read playlist-read-private"
     )
 
