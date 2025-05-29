@@ -23,6 +23,7 @@ const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
           const { status, result } = await statusRes.json();
 
           if (status === "SUCCESS" && result) {
+            console.log("status === SUCCESS && result")
             const downloadRes = await fetch(`https://api.exportmymusic.com/download/${task_id}`, {
               method: "GET",
               credentials: "include",
@@ -49,6 +50,7 @@ const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
           } else if (status === "FAILURE") {
             alert("Excel export failed.");
           } else {
+            console.log("No Success")
             setTimeout(pollStatus, 1000);
           }
         } catch (err) {
