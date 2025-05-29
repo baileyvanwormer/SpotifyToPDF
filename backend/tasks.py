@@ -117,6 +117,7 @@ def generate_excel(session_token, include_liked, playlist_ids, liked_limit):
     print("🔑 Session Token (partial):", session_token[:10])
 
     sp = get_spotify_client(session_token)
+    print("sp: ", session_token)
     if not sp:
         return {"status": "failed", "reason": "invalid token"}
 

@@ -15,7 +15,7 @@ def upload_to_s3(local_file_path):
     s3_key = f"exports/{uuid4().hex}_{os.path.basename(local_file_path)}"
 
     try:
-        s3.upload_file(local_file_path, bucket_name, s3_key, ExtraArgs={"ACL": "public-read"})
+        s3.upload_file(local_file_path, bucket_name, s3_key)
         s3_url = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
         print(f"✅ Uploaded to S3: {s3_url}")
         return s3_url
