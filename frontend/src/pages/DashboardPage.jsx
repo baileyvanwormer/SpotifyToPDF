@@ -116,12 +116,12 @@ const DashboardPage = () => {
       </div>
 
       <div style={{ display: "flex", gap: "1rem" }}>
-        <ExportPDFButton
+        <ExportExcelButton
           includeLiked={includeLiked}
           playlistIds={selectedPlaylists}
           likedLimit={likedLimit}
         />
-        <ExportExcelButton
+        <ExportPDFButton
           includeLiked={includeLiked}
           playlistIds={selectedPlaylists}
           likedLimit={likedLimit}

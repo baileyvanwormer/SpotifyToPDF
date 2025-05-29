@@ -4,7 +4,7 @@ const LoginPage = () => {
   console.log("login page loaded");
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1>Spotify to PDF</h1>
+      <h1>Export My Music</h1>
       <p>Click below to log in with your Spotify account.</p>
       <LoginButton />
     </div>
