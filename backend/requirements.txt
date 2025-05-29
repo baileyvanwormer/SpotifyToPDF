@@ -3,7 +3,7 @@ flask-cors
 gunicorn
 spotipy
 python-dotenv
-fpdf
+fpdf2>=2.8.3
 pandas
 openpyxl
 celery
