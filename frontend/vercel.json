@@ -2,32 +2,40 @@
     "rewrites": [
       {
         "source": "/dashboard",
-        "destination": "https://backend-production-4f70.up.railway.app/dashboard"
+        "destination": "https://api.exportmymusic.com/dashboard"
       },
       {
         "source": "/export",
-        "destination": "https://backend-production-4f70.up.railway.app/export"
+        "destination": "https://api.exportmymusic.com/export"
       },
       {
         "source": "/exportxlsx",
-        "destination": "https://backend-production-4f70.up.railway.app/exportxlsx"
+        "destination": "https://api.exportmymusic.com/exportxlsx"
       },
       {
         "source": "/login",
-        "destination": "https://backend-production-4f70.up.railway.app/login"
+        "destination": "https://api.exportmymusic.com/login"
+      },
+      {
+        "source": "/exchange",
+        "destination": "https://api.exportmymusic.com/exchange"
       },
       {
         "source": "/status/:task_id",
-        "destination": "https://backend-production-4f70.up.railway.app/status/:task_id"
+        "destination": "https://api.exportmymusic.com/status/:task_id"
       },
       {
         "source": "/download/:task_id",
-        "destination": "https://backend-production-4f70.up.railway.app/download/:task_id"
+        "destination": "https://api.exportmymusic.com/download/:task_id"
+      },
+      {
+        "source": "/callback",
+        "destination": "/index.html"
       },
       {
         "source": "/:path*",
         "destination": "/index.html"
       }
     ]
-}
+  }  
   
