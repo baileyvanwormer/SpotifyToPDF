@@ -1,5 +1,5 @@
 # ExportMyMusic.com
-Turn Spotify Liked Songs and playlists into .pdf and .xlsx files to store in case Spotify servers ever remove songs or go down.
+Turn Spotify Liked Songs and playlists into .xlsx and .pdf files to store in case Spotify servers ever remove songs or go down. Planning to add functionality for other music streaming services in future versions.
 
 Link to website: https://www.exportmymusic.com
 
@@ -10,31 +10,21 @@ Link to Spotify Dev site: https://developer.spotify.com/dashboard
 *Key commands to start application for dev testing*:
     To start Redis:
 
-    cd into backend ->
-
-    brew services start redis ->
-
-    redis-cli ping (To ensure Redis is running properly)
+    'cd backend -> brew services start redis -> redis-cli ping' (To ensure Redis is running properly)
     
     To start Flask: 
     
-    cd into backend -> 
-    
-    python3 app.py
+    'cd backend -> python3 app.py'
 
     To start Celery (must be after redis) ->
 
-    celery -A celery_worker.celery_app worker --loglevel=info
+    'celery -A celery_worker.celery_app worker --loglevel=info'
 
-    To start ngrok (must be after Flask): New terminal -> 
-    
-    ngrok http --url=spotifytopdf.ngrok.app 127.0.0.1:5000
+    To start ngrok (must be after Flask): New terminal -> 'ngrok http --url=spotifytopdf.ngrok.app 127.0.0.1:5000'
 
     To start frontend:
 
-    cd into frontend ->
-
-    npm run dev
+    'cd frontend -> 'npm run build' -> npm run dev'
 
 Using Postman for backend testing.
 
