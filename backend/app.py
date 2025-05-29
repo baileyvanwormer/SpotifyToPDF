@@ -244,28 +244,14 @@ def download_file(task_id):
         print("⏳ Task not ready")
         return jsonify({"status": "processing"}), 202
 
-    file_path = result.result
-    print(f"📥 Attempting to send: {file_path}")
+    file_url = result.result  # now an S3 URL
+    print(f"📦 S3 file ready at: {file_url}")
 
-    if not file_path or not os.path.isfile(file_path):
-        print("❌ File not found!")
-        return jsonify({"error": "File not found"}), 404
+    if not file_url or not file_url.startswith("https://"):
+        print("❌ Invalid file URL!")
+        return jsonify({"error": "Invalid file URL"}), 404
 
-    print(f"📦 Found file. Size: {os.path.getsize(file_path)} bytes")
-
-    if file_path.endswith(".xlsx"):
-        mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    elif file_path.endswith(".pdf"):
-        mimetype = "application/pdf"
-    else:
-        mimetype = "application/octet-stream"
-
-    return send_file(
-        file_path,
-        as_attachment=True,
-        download_name=os.path.basename(file_path),
-        mimetype=mimetype
-    )
+    return redirect(file_url)
 
 # React routes – catch-all
 @app.route("/", defaults={"path": ""})

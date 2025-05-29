@@ -7,6 +7,7 @@ import spotipy
 from datetime import datetime
 import pandas as pd
 import openpyxl
+from utils import upload_to_s3
 
 @celery_app.task(name="tasks.generate_pdf")
 def generate_pdf(token, include_liked, playlist_ids, liked_limit):
@@ -74,7 +75,7 @@ def generate_pdf(token, include_liked, playlist_ids, liked_limit):
     pdf_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "spotify_export.pdf"))
     with open(pdf_path, "wb") as f:
         pdf.output(f)
-    return pdf_path
+    return upload_to_s3(pdf_path)
 
 @celery_app.task(name="tasks.generate_excel")
 def generate_excel(token, include_liked, playlist_ids, liked_limit):
@@ -149,7 +150,7 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
         wb.close()
 
         print(f"✅ Excel complete: {xlsx_path} ({os.path.getsize(xlsx_path)} bytes)")
-        return xlsx_path
+        return upload_to_s3(xlsx_path)  # or pdf_path
 
     except Exception as e:
         print("❌ Excel generation failed:", e)

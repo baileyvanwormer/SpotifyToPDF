@@ -7,3 +7,4 @@ fpdf
 pandas
 openpyxl
 celery
+boto3
