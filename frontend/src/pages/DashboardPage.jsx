@@ -61,60 +61,62 @@ const DashboardPage = () => {
 
       <div style={{ marginBottom: "1rem" }}>
         <h3>Liked Songs</h3>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            border: "1px solid #ccc",
-            borderRadius: "8px",
-            padding: "0.5rem",
-            width: "300px",
-            marginBottom: "1rem",
-            backgroundColor: "#f9f9f9",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={includeLiked}
-            onChange={(e) => setIncludeLiked(e.target.checked)}
-            style={{ marginRight: "0.75rem" }}
-          />
-          <img
-            src="https://misc.scdn.co/liked-songs/liked-songs-300.png"
-            alt="Liked Songs"
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <div
             style={{
-              width: "64px",
-              height: "64px",
-              objectFit: "cover",
+              display: "flex",
+              alignItems: "center",
+              border: "1px solid #ccc",
               borderRadius: "8px",
-              marginRight: "0.75rem",
+              padding: "0.5rem",
+              width: "300px",
+              backgroundColor: "#f9f9f9",
             }}
-          />
-          <div>
-            <strong style={{ color: "#000" }}>Liked Songs</strong>
-            <div style={{ fontSize: "0.85rem", color: "#666" }}>
-              {likedTotal} saved tracks
-            </div>
-            {includeLiked && likedTotal > 0 && (
-              <div style={{ marginTop: "0.5rem" }}>
-                <label style={{ fontSize: "0.8rem" }}>
-                  How many to export:&nbsp;
-                  <select
-                    value={likedLimit}
-                    onChange={(e) => setLikedLimit(parseInt(e.target.value))}
-                  >
-                    {Array.from({ length: Math.ceil(likedTotal / 50) }, (_, i) => (i + 1) * 50).map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+          >
+            <input
+              type="checkbox"
+              checked={includeLiked}
+              onChange={(e) => setIncludeLiked(e.target.checked)}
+              style={{ marginRight: "0.75rem" }}
+            />
+            <img
+              src="https://misc.scdn.co/liked-songs/liked-songs-300.png"
+              alt="Liked Songs"
+              style={{
+                width: "64px",
+                height: "64px",
+                objectFit: "cover",
+                borderRadius: "8px",
+                marginRight: "0.75rem",
+              }}
+            />
+            <div>
+              <strong style={{ color: "#000" }}>Liked Songs</strong>
+              <div style={{ fontSize: "0.85rem", color: "#666" }}>
+                {likedTotal} saved tracks
               </div>
-            )}
+              {includeLiked && likedTotal > 0 && (
+                <div style={{ marginTop: "0.5rem" }}>
+                  <label style={{ fontSize: "0.8rem" }}>
+                    How many to export:&nbsp;
+                    <select
+                      value={likedLimit}
+                      onChange={(e) => setLikedLimit(parseInt(e.target.value))}
+                    >
+                      {Array.from({ length: Math.ceil(likedTotal / 50) }, (_, i) => (i + 1) * 50).map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
 
       <div style={{ marginBottom: "1rem" }}>
         <h3>My Playlists</h3>
