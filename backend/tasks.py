@@ -14,12 +14,15 @@ from utils import upload_to_s3
 
 def get_spotify_client(session_token):
     r = redis.Redis.from_url(os.getenv("REDIS_URL"))
-    token_info_raw = r.get(session_token)
+    redis_key = f"session:{session_token}"
+    token_info_raw = r.get(redis_key)
+
     if not token_info_raw:
         print("❌ No token_info found in Redis for session_token")
         return None
 
     token_info = json.loads(token_info_raw)
+    access_token = token_info.get("access_token")
 
     # Refresh token if needed
     if token_info.get("expires_at") and token_info["expires_at"] - int(time.time()) < 60:
@@ -30,10 +33,10 @@ def get_spotify_client(session_token):
             redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI")
         )
         token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
-        r.set(session_token, json.dumps(token_info), ex=3600)
+        access_token = token_info["access_token"]
+        r.set(redis_key, json.dumps(token_info), ex=3600)
 
-    return spotipy.Spotify(auth=token_info["access_token"])
-
+    return spotipy.Spotify(auth=access_token)
 
 @celery_app.task(name="tasks.generate_pdf")
 def generate_pdf(session_token, include_liked, playlist_ids, liked_limit):
