@@ -25,6 +25,14 @@ CORS(app, supports_credentials=True, origins=[
     "https://www.exportmymusic.com"
 ])
 
+@app.after_request
+def add_cors_headers(response):
+    response.headers.add("Access-Control-Allow-Origin", "https://www.exportmymusic.com")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+    return response
+
 print("🚀 Flask app is running from:", __file__)
 
 from urllib.parse import urlparse
@@ -258,8 +266,6 @@ def download_file(task_id):
         download_name=os.path.basename(file_path),
         mimetype=mimetype
     )
-
-
 
 # React routes – catch-all
 @app.route("/", defaults={"path": ""})
