@@ -21,7 +21,9 @@ const ExportExcelButton = ({ includeLiked, playlistIds, likedLimit }) => {
         try {
           const statusRes = await fetch(`https://api.exportmymusic.com/status/${task_id}`);
           const { status, result } = await statusRes.json();
-
+          
+          console.log("status: " + status)
+          console.log("result: " + result)
           if (status === "SUCCESS" && result) {
             console.log("status === SUCCESS && result")
             const downloadRes = await fetch(`https://api.exportmymusic.com/download/${task_id}`, {

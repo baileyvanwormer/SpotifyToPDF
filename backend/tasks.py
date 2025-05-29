@@ -75,7 +75,9 @@ def generate_pdf(token, include_liked, playlist_ids, liked_limit):
     pdf_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "spotify_export.pdf"))
     with open(pdf_path, "wb") as f:
         pdf.output(f)
-    return upload_to_s3(pdf_path)
+    url = upload_to_s3(pdf_path)
+    print(url)
+    return url
 
 @celery_app.task(name="tasks.generate_excel")
 def generate_excel(token, include_liked, playlist_ids, liked_limit):
@@ -150,7 +152,9 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
         wb.close()
 
         print(f"✅ Excel complete: {xlsx_path} ({os.path.getsize(xlsx_path)} bytes)")
-        return upload_to_s3(xlsx_path)  # or pdf_path
+        url = upload_to_s3(xlsx_path)  # or pdf_path
+        print(url)
+        return url
 
     except Exception as e:
         print("❌ Excel generation failed:", e)
