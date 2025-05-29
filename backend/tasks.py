@@ -40,77 +40,85 @@ def get_spotify_client(session_token):
 
 @celery_app.task(name="tasks.generate_pdf")
 def generate_pdf(session_token, include_liked, playlist_ids, liked_limit):
-    sp = get_spotify_client(session_token)
-    if not sp:
-        return {"status": "failed", "reason": "invalid token"}
+    try:
+        sp = get_spotify_client(session_token)
+        if not sp:
+            return {"status": "failed", "reason": "invalid token"}
 
-    font_dir = os.path.join(os.path.dirname(__file__), "fonts")
-    pdf = FPDF()
-    pdf.add_page()
-    print("📂 Font dir contents:", os.listdir(font_dir))
-    print("📍 Font path:", os.path.join(font_dir, "NotoSans-Medium.ttf"))
-    pdf.add_font("NotoSans", "", os.path.join(font_dir, "NotoSans-Medium.ttf"), uni=True)
-    pdf.add_font("NotoSans", "B", os.path.join(font_dir, "NotoSans-Bold.ttf"), uni=True)
-    pdf.add_font("NotoSans", "I", os.path.join(font_dir, "NotoSans-Italic.ttf"), uni=True)
-
-    if include_liked:
-        liked_tracks = []
-        MAX_SPOTIFY_LIMIT = 50
-        fetched = 0
-
-        while fetched < liked_limit:
-            to_fetch = min(MAX_SPOTIFY_LIMIT, liked_limit - fetched)
-            results = sp.current_user_saved_tracks(limit=to_fetch, offset=fetched)
-            for item in results['items']:
-                track = item['track']
-                artist = track['artists'][0]['name']
-                song = track['name']
-                liked_tracks.append((artist, song))
-            fetched += to_fetch
-            if not results.get('next'):
-                break
-
-        now = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-        pdf.set_font("NotoSans", "I", 10)
-        pdf.cell(0, 10, f"Exported on {now}", ln=True)
-        pdf.ln(5)
-
-        pdf.set_font("NotoSans", "B", 16)
-        pdf.cell(0, 10, "🎵 Liked Songs", ln=True)
-        pdf.ln(5)
-
-        for i, (artist, song) in enumerate(liked_tracks):
-            pdf.set_font("NotoSans", "", 12)
-            pdf.multi_cell(0, 10, f"{i+1}. {artist} – {song}")
-            pdf.ln(1)
-
-    for pid in playlist_ids:
-        playlist = sp.playlist(pid)
-        tracks_data = sp.playlist_tracks(pid)
-        tracks = []
-        for item in tracks_data['items']:
-            track = item['track']
-            if track:
-                artist = track['artists'][0]['name']
-                song = track['name']
-                tracks.append((artist, song))
-
+        from fpdf import FPDF
+        font_dir = os.path.join(os.path.dirname(__file__), "fonts")
+        pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("NotoSans", "B", 16)
-        pdf.cell(0, 10, f"📂 Playlist: {playlist['name']}", ln=True)
-        pdf.ln(5)
 
-        for i, (artist, song) in enumerate(tracks):
-            pdf.set_font("NotoSans", "", 12)
-            pdf.multi_cell(0, 10, f"{i+1}. {artist} – {song}")
-            pdf.ln(1)
+        # Register fonts
+        font_regular = os.path.join(font_dir, "NotoSans-Medium.ttf")
+        font_bold = os.path.join(font_dir, "NotoSans-Bold.ttf")
+        font_italic = os.path.join(font_dir, "NotoSans-Italic.ttf")
 
-    pdf_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "spotify_export.pdf"))
-    pdf.output(pdf_path)
-    url = upload_to_s3(pdf_path)
-    print(f"✅ Returning S3 URL: {url}")
-    return url
+        pdf.add_font("NotoSans", "", font_regular, uni=True)
+        pdf.add_font("NotoSans", "B", font_bold, uni=True)
+        pdf.add_font("NotoSans", "I", font_italic, uni=True)
 
+        def write_track_list(title, tracks):
+            pdf.set_font("NotoSans", "B", 16)
+            pdf.cell(0, 10, title, ln=True)
+            pdf.ln(5)
+            for i, (artist, song) in enumerate(tracks):
+                pdf.set_font("NotoSans", "", 12)
+                try:
+                    text = f"{i+1}. {artist} – {song}"
+                    pdf.multi_cell(0, 10, text)
+                except Exception as e:
+                    print(f"⚠️ Skipping line due to encoding error: {e}")
+                pdf.ln(1)
+
+        if include_liked:
+            liked_tracks = []
+            fetched = 0
+            MAX_SPOTIFY_LIMIT = 50
+            while fetched < liked_limit:
+                to_fetch = min(MAX_SPOTIFY_LIMIT, liked_limit - fetched)
+                results = sp.current_user_saved_tracks(limit=to_fetch, offset=fetched)
+                for item in results["items"]:
+                    track = item["track"]
+                    if track:
+                        artist = track["artists"][0]["name"]
+                        song = track["name"]
+                        liked_tracks.append((artist, song))
+                fetched += to_fetch
+                if not results.get("next"):
+                    break
+
+            now = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+            pdf.set_font("NotoSans", "I", 10)
+            pdf.cell(0, 10, f"Exported on {now}", ln=True)
+            pdf.ln(5)
+
+            write_track_list("🎵 Liked Songs", liked_tracks)
+
+        for pid in playlist_ids:
+            playlist = sp.playlist(pid)
+            tracks_data = sp.playlist_tracks(pid)
+            tracks = []
+            for item in tracks_data["items"]:
+                track = item["track"]
+                if track:
+                    artist = track["artists"][0]["name"]
+                    song = track["name"]
+                    tracks.append((artist, song))
+
+            pdf.add_page()
+            write_track_list(f"📂 Playlist: {playlist['name']}", tracks)
+
+        pdf_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "spotify_export.pdf"))
+        pdf.output(pdf_path)
+        url = upload_to_s3(pdf_path)
+        print(f"✅ Returning S3 URL: {url}")
+        return url
+
+    except Exception as e:
+        print(f"❌ PDF generation failed: {e}")
+        return {"status": "failed", "reason": str(e)}
 
 @celery_app.task(name="tasks.generate_excel")
 def generate_excel(session_token, include_liked, playlist_ids, liked_limit):
