@@ -76,7 +76,7 @@ def generate_pdf(token, include_liked, playlist_ids, liked_limit):
     with open(pdf_path, "wb") as f:
         pdf.output(f)
     url = upload_to_s3(pdf_path)
-    print(url)
+    print(f"✅ Returning S3 URL: {url}")
     return url
 
 @celery_app.task(name="tasks.generate_excel")
@@ -153,7 +153,7 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
 
         print(f"✅ Excel complete: {xlsx_path} ({os.path.getsize(xlsx_path)} bytes)")
         url = upload_to_s3(xlsx_path)  # or pdf_path
-        print(url)
+        print(f"✅ Returning S3 URL: {url}")
         return url
 
     except Exception as e:
