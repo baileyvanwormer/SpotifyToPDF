@@ -58,8 +58,10 @@ const DashboardPage = () => {
   };  
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h2>🎧 Customize Your Export</h2>
+    <div class="dash-header" style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
+      <h1>Select Playlists and Preferences</h1>
+
+      <p>Choose the playlists you want to export and whether to include Liked Songs.</p>
 
       <div style={{ marginBottom: "1rem" }}>
         <label>
@@ -68,7 +70,7 @@ const DashboardPage = () => {
             checked={includeLiked}
             onChange={(e) => setIncludeLiked(e.target.checked)}
           />
-          Include Liked Songs ({likedSongs.length})
+          Include Liked Songs
         </label>
       </div>
 
@@ -93,7 +95,7 @@ const DashboardPage = () => {
 
 
       <div style={{ marginBottom: "1rem" }}>
-      <h3>Select Playlists</h3>
+      <h3>My Playlists</h3>
       <label style={{ display: "block", marginBottom: "0.5rem" }}>
         <input
           type="checkbox"
@@ -115,7 +117,7 @@ const DashboardPage = () => {
       ))}
       </div>
 
-      <div style={{ display: "flex", gap: "1rem" }}>
+      <div class="export-buttons">
         <ExportExcelButton
           includeLiked={includeLiked}
           playlistIds={selectedPlaylists}

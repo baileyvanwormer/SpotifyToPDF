@@ -4,7 +4,7 @@ const LoginButton = () => {
       window.location.href = "https://api.exportmymusic.com/login"; // or your ngrok URL
     };
   
-    return <button onClick={handleLogin}>Log in with Spotify</button>;
+    return <button onClick={handleLogin}>Log in to Spotify</button>;
   };
   
   export default LoginButton;
