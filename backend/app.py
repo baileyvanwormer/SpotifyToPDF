@@ -89,38 +89,34 @@ def dashboard():
     if not access_token:
         return jsonify({"error": "Session expired or invalid"}), 403
 
-    sp = spotipy.Spotify(auth=access_token)
-
     try:
         # ✅ Just fetch 1 liked song to get the total count
         liked_response = sp.current_user_saved_tracks(limit=1)
         liked_total = liked_response['total']
 
-        # ✅ You can skip collecting songs here if you’re only showing total
-        # or leave this empty or limited to 1
         liked_songs = [{
             "name": t['track']['name'],
             "artist": t['track']['artists'][0]['name'],
             "id": t['track']['id']
         } for t in liked_response['items']]
 
-        # ✅ Get playlists as usual
+        # ✅ Get playlists with image URLs
         playlists = sp.current_user_playlists()
         playlist_list = [{
             "name": p['name'],
             "id": p['id'],
-            "track_count": p['tracks']['total']
+            "track_count": p['tracks']['total'],
+            "image": p['images'][0]['url'] if p['images'] else None
         } for p in playlists['items']]
 
         return jsonify({
-            "liked_songs": liked_songs,  # can be empty or preview only
-            "liked_total": liked_total,  # ✅ new!
+            "liked_songs": liked_songs,
+            "liked_total": liked_total,
             "playlists": playlist_list
         })
 
     except spotipy.SpotifyException as e:
         return jsonify({"error": str(e)}), 401
-
 
 # POST: send user Spotify access token to fetch Liked Songs and Playlist data from Spotify API
 @app.route("/export", methods=["POST"])
