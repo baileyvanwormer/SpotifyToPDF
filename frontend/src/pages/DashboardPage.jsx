@@ -111,7 +111,6 @@ const DashboardPage = () => {
                 borderRadius: "8px",
                 padding: "0.5rem",
                 width: "300px",
-                backgroundColor: "#f9f9f9",
               }}
             >
               <input
