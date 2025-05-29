@@ -15,10 +15,19 @@ def upload_to_s3(local_file_path):
     s3_key = f"exports/{uuid4().hex}_{os.path.basename(local_file_path)}"
 
     try:
+        # Upload the file (no ACL)
         s3.upload_file(local_file_path, bucket_name, s3_key)
-        s3_url = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-        print(f"✅ Uploaded to S3: {s3_url}")
-        return s3_url
+
+        # Generate a presigned URL
+        url = s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket_name, "Key": s3_key},
+            ExpiresIn=3600  # 1 hour
+        )
+
+        print(f"✅ Presigned URL: {url}")
+        return url
+
     except NoCredentialsError as e:
         print("❌ S3 upload failed – no credentials:", e)
         return None
