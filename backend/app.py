@@ -143,6 +143,7 @@ def export_xlsx():
     if not token:
         return jsonify({"error": "Missing or invalid token"}), 401
 
+    print("🔑 Token (partial) before generate excel call:", token[:10])
     data = request.get_json()
     include_liked = data.get("include_liked", True)
     playlist_ids = data.get("playlist_ids", [])
