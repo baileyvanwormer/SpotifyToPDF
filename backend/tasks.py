@@ -1,17 +1,45 @@
-# backend/tasks.py
-
 from celery_worker import celery_app
 import os
 from fpdf import FPDF
 import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 from datetime import datetime
 import pandas as pd
 import openpyxl
+import json
+import redis
+import time
 from utils import upload_to_s3
 
+
+def get_spotify_client(session_token):
+    r = redis.Redis.from_url(os.getenv("REDIS_URL"))
+    token_info_raw = r.get(session_token)
+    if not token_info_raw:
+        print("❌ No token_info found in Redis for session_token")
+        return None
+
+    token_info = json.loads(token_info_raw)
+
+    # Refresh token if needed
+    if token_info.get("expires_at") and token_info["expires_at"] - int(time.time()) < 60:
+        print("🔁 Refreshing expired Spotify token...")
+        sp_oauth = SpotifyOAuth(
+            client_id=os.getenv("SPOTIPY_CLIENT_ID"),
+            client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
+            redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI")
+        )
+        token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
+        r.set(session_token, json.dumps(token_info), ex=3600)
+
+    return spotipy.Spotify(auth=token_info["access_token"])
+
+
 @celery_app.task(name="tasks.generate_pdf")
-def generate_pdf(token, include_liked, playlist_ids, liked_limit):
-    sp = spotipy.Spotify(auth=token)
+def generate_pdf(session_token, include_liked, playlist_ids, liked_limit):
+    sp = get_spotify_client(session_token)
+    if not sp:
+        return {"status": "failed", "reason": "invalid token"}
 
     font_dir = os.path.join(os.path.dirname(__file__), "fonts")
     pdf = FPDF()
@@ -79,13 +107,17 @@ def generate_pdf(token, include_liked, playlist_ids, liked_limit):
     print(f"✅ Returning S3 URL: {url}")
     return url
 
+
 @celery_app.task(name="tasks.generate_excel")
-def generate_excel(token, include_liked, playlist_ids, liked_limit):
+def generate_excel(session_token, include_liked, playlist_ids, liked_limit):
     print("🔧 Starting Excel task...")
-    print("🔑 Token (partial):", token[:10])
+    print("🔑 Session Token (partial):", session_token[:10])
+
+    sp = get_spotify_client(session_token)
+    if not sp:
+        return {"status": "failed", "reason": "invalid token"}
 
     try:
-        sp = spotipy.Spotify(auth=token)
         rows = []
         MAX_SPOTIFY_LIMIT = 50
         fetched = 0
@@ -100,7 +132,7 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
                     track = item['track']
                     rows.append({
                         "Source": "Liked Songs",
-                        "Artist": track['artists'][0]['name'],  # moved up
+                        "Artist": track['artists'][0]['name'],
                         "Track": track['name'],
                         "Album": track['album']['name'],
                         "Duration (min)": "{:d}:{:02d}".format(
@@ -122,7 +154,7 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
                 if track:
                     rows.append({
                         "Source": playlist_name,
-                        "Artist": track['artists'][0]['name'],  # moved up
+                        "Artist": track['artists'][0]['name'],
                         "Track": track['name'],
                         "Album": track['album']['name'],
                         "Duration (min)": "{:d}:{:02d}".format(
@@ -133,14 +165,14 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
 
         if not rows:
             print("⚠️ No rows collected — skipping Excel export.")
-            return None
+            return {"status": "failed", "reason": "no data"}
 
         import uuid
         filename = f"spotify_export_{uuid.uuid4().hex}.xlsx"
         xlsx_path = os.path.join(os.path.dirname(__file__), filename)
         print(f"💾 Writing Excel to: {xlsx_path}")
 
-        df = pd.DataFrame(rows, columns=["Source", "Artist", "Track", "Album", "Duration (min)"])  # explicit order
+        df = pd.DataFrame(rows, columns=["Source", "Artist", "Track", "Album", "Duration (min)"])
         df.to_excel(xlsx_path, index=False, engine='openpyxl')
 
         wb = openpyxl.load_workbook(xlsx_path)
@@ -152,10 +184,10 @@ def generate_excel(token, include_liked, playlist_ids, liked_limit):
         wb.close()
 
         print(f"✅ Excel complete: {xlsx_path} ({os.path.getsize(xlsx_path)} bytes)")
-        url = upload_to_s3(xlsx_path)  # or pdf_path
+        url = upload_to_s3(xlsx_path)
         print(f"✅ Returning S3 URL: {url}")
         return url
 
     except Exception as e:
         print("❌ Excel generation failed:", e)
-        return None
+        return {"status": "failed", "reason": str(e)}
