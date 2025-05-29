@@ -125,7 +125,7 @@ def dashboard():
 # POST: send user Spotify access token to fetch Liked Songs and Playlist data from Spotify API
 @app.route("/export", methods=["POST"])
 def export():
-    token = request.cookies.get("spotify_token")
+    token = request.cookies.get("session_token")
     if not token:
         return jsonify({"error": "Missing or invalid token"}), 401
 
@@ -139,7 +139,7 @@ def export():
 
 @app.route("/exportxlsx", methods=["POST"])
 def export_xlsx():
-    token = request.cookies.get("spotify_token")
+    token = request.cookies.get("session_token")
     if not token:
         return jsonify({"error": "Missing or invalid token"}), 401
 
@@ -173,7 +173,7 @@ def export_xlsx():
 #     r.setex(f"session:{session_token}", 3600, access_token)
 #     print(f"✅ Stored session:{session_token} → {access_token}")
 
-#     # ✅ Set session_token in cookie instead of spotify_token
+#     # ✅ Set session_token in cookie instead of session_token
 #     resp = make_response(f"""
 #     <html>
 #     <body>
