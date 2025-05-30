@@ -85,8 +85,9 @@ p {
   transform: translateX(-50%); /* Perfect centering */
   z-index: 1000;           /* Ensure it stays above other content */
   text-align: center;
-  width: auto;
+  width: 100%;
   font-size: 1rem;
+  background-color: #ffffff;
 }
 
 .dash-header {
